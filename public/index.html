@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Base Trending Tokens</title>
+<link rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🟦</text></svg>">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#0000ff;
+    --green:#66c800;
+    --red:#fc401f;
+
+    --bg:#0a0b0d;
+    --panel:#0f1115;
+    --panel-accent:#121419;
+    --border:#1d2026;
+
+    --text:#e9edf2;
+    --text-weak:#cfd6de;
+    --muted:#aeb6c2;
+
+    --btn-bg:#121419;
+    --btn-br:#2a2f38;
+    --btn-hover:#171c23;
+    --btn-active:#0a0b0d;
+
+    --focus:#0000ff;
+    --logo-color:#ffffff;
+    --footer-link:#cfd6de;
+    --footer-link-hover:#ffffff;
+
+    --page-side-padding:35px;
+    --page-top-padding:35px;
+    --footer-bottom-gap:18px;
+    --panel-footer-gap:18px;
+
+    --thead-padding:14px;
+    --row-padding:14px;
+    --table-gap:6px;
+    --logo-size:40px;
+
+    --table-min-width:980px;
+
+    --scroll-size:10px;
+    --scroll-radius:999px;
+    --scroll-track:transparent;
+    --scroll-thumb:rgba(255,255,255,.16);
+    --scroll-thumb-hover:rgba(255,255,255,.28);
+  }
+
+  .theme-light{
+    --bg:#ffffff;
+    --panel:#f7f9fb;
+    --panel-accent:#eef2f7;
+    --border:#e4e9f1;
+
+    --text:#12203a;
+    --text-weak:#2a3b57;
+    --muted:#5a6e93;
+
+    --btn-bg:#f3f6fb;
+    --btn-br:#dfe7f3;
+    --btn-hover:#e9eef7;
+    --btn-active:#e0e6f2;
+
+    --focus:#0000ff;
+    --logo-color:#0000ff;
+
+    --footer-link:#31425f;
+    --footer-link-hover:#0000ff;
+
+    --scroll-track:transparent;
+    --scroll-thumb:rgba(49,66,95,.22);
+    --scroll-thumb-hover:rgba(49,66,95,.38);
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+
+  .wrap{
+    max-width:1200px;
+    min-height:100vh;
+    margin:0 auto;
+    padding:var(--page-top-padding) var(--page-side-padding) var(--footer-bottom-gap);
+  }
+
+  .header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    margin-bottom:30px;
+  }
+
+  .title{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    min-width:0;
+  }
+
+  .base-logo{
+    display:inline-flex;
+    align-items:center;
+    color:var(--logo-color);
+    flex:0 0 auto;
+  }
+
+  .base-logo svg{
+    height:26px;
+    width:auto;
+    display:block;
+  }
+
+  .title-text{
+    font-size:26px;
+    font-weight:700;
+    letter-spacing:.2px;
+  }
+
+  .theme-toggle{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-size:13px;
+    color:var(--muted);
+    flex:0 0 auto;
+  }
+
+  .switch{
+    position:relative;
+    width:44px;
+    height:24px;
+    border-radius:999px;
+    background:var(--btn-bg);
+    border:1px solid var(--btn-br);
+    cursor:pointer;
+    transition:background .15s,border-color .15s;
+  }
+  .switch:hover{background:var(--btn-hover)}
+
+  .knob{
+    position:absolute;
+    top:2px;
+    left:2px;
+    width:20px;
+    height:20px;
+    border-radius:50%;
+    background:#fff;
+    transition:left .18s,background .15s;
+    box-shadow:0 1px 2px rgba(0,0,0,.15);
+  }
+
+  .switch[aria-checked="true"] .knob{left:22px}
+  .theme-label{min-width:42px;font-weight:500}
+
+  .topbar{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+
+  .chips{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+
+  .chip{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    padding:6px 14px;
+    min-height:40px;
+    border-radius:10px;
+    border:1.5px solid transparent;
+    background:var(--btn-bg);
+    color:var(--muted);
+    font-size:14px;
+    font-weight:500;
+    cursor:pointer;
+    transition:all .2s;
+    user-select:none;
+    white-space:nowrap;
+  }
+  .chip:hover{background:var(--btn-hover)}
+  .chip.active{
+    background:var(--bg);
+    border-color:#3b63ff;
+    color:var(--text);
+  }
+
+  .chip-icon{
+    width:16px;
+    height:16px;
+    border-radius:5px;
+    object-fit:cover;
+    display:none;
+    flex:0 0 auto;
+  }
+
+  .chip-label{
+    display:inline-block;
+    line-height:1;
+  }
+
+  .cycle-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:58px;
+    min-height:40px;
+    padding:6px 14px;
+    border-radius:10px;
+    border:1.5px solid #3b63ff;
+    background:var(--bg);
+    color:var(--text);
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    transition:all .2s;
+    user-select:none;
+    white-space:nowrap;
+  }
+  .cycle-btn:hover{background:var(--btn-hover)}
+
+  .content{margin-top:14px}
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:12px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    min-height:260px;
+    height:var(--panel-height,60vh);
+    margin-bottom:var(--panel-footer-gap);
+  }
+
+  .table-scroll{
+    flex:1 1 auto;
+    min-height:0;
+    overflow:auto;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:thin;
+    scrollbar-color:var(--scroll-thumb) var(--scroll-track);
+  }
+
+  .table-inner{
+    min-width:var(--table-min-width);
+    width:100%;
+    min-height:100%;
+    display:flex;
+    flex-direction:column;
+  }
+
+  .thead,.row{
+    display:grid;
+    align-items:center;
+    gap:var(--table-gap);
+  }
+
+  .thead.desktop,
+  .row.desktop{
+    grid-template-columns:
+      68px
+      minmax(150px,1.5fr)
+      minmax(120px,1fr)
+      minmax(95px,.8fr)
+      minmax(100px,.8fr)
+      minmax(100px,.8fr)
+      minmax(72px,.55fr);
+  }
+
+  .thead.mobile,
+  .row.mobile{
+    grid-template-columns:
+      30px
+      minmax(120px,1fr)
+      minmax(86px,.7fr)
+      minmax(70px,.58fr)
+      minmax(70px,.58fr)
+      minmax(50px,.44fr);
+  }
+
+  .thead{
+    padding:var(--thead-padding);
+    background:var(--panel-accent);
+    color:var(--text-weak);
+    font-weight:600;
+    position:sticky;
+    top:0;
+    z-index:5;
+    border-bottom:1px solid var(--border);
+    flex:0 0 auto;
+  }
+
+  .rows{
+    flex:1 1 auto;
+    min-height:0;
+    overflow:visible;
+  }
+
+  .row{
+    padding:var(--row-padding);
+    border-top:1px solid var(--border);
+  }
+  .row:hover{background:rgba(0,0,0,.04)}
+
+  .rank{
+    font-weight:600;
+    font-size:14px;
+    white-space:nowrap;
+  }
+
+  .token{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    min-width:0;
+  }
+
+  .logo{
+    width:var(--logo-size);
+    height:var(--logo-size);
+    border-radius:10px;
+    object-fit:cover;
+    border:1px solid var(--border);
+    flex:0 0 auto;
+  }
+
+  .tinfo{min-width:0;flex:1}
+
+  .symbol-line{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    min-width:0;
+  }
+
+  .symbol{
+    font-weight:600;
+    font-size:15px;
+    color:#3b63ff;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    min-width:0;
+  }
+
+  .cat-icon{
+    width:18px;
+    height:18px;
+    border-radius:6px;
+    object-fit:cover;
+    border:1px solid var(--border);
+    flex:0 0 auto;
+  }
+
+  .subline{margin-top:2px}
+
+  .name-line{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:12px;
+    color:var(--muted);
+    min-width:0;
+    line-height:1.15;
+  }
+
+  .name{
+    display:inline-block;
+    max-width:100%;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .ca-btn{
+    font-size:10px;
+    padding:0 6px;
+    line-height:1.4;
+    border-radius:5px;
+    border:1px solid var(--btn-br);
+    height:20px;
+    background:var(--btn-bg);
+    color:#3b63ff;
+    cursor:pointer;
+    transition:background .15s,color .15s,border-color .15s,transform .08s;
+    flex:0 0 auto;
+  }
+  .ca-btn:hover{background:var(--btn-hover)}
+  .ca-btn:active,.ca-btn.copied{background:var(--btn-active);border-color:var(--blue);color:var(--blue)}
+
+  .price,
+  .change,
+  .age,
+  .volume,
+  .fdv{
+    font-size:14px;
+    font-weight:500;
+    white-space:nowrap;
+  }
+
+  .change.positive{color:var(--green)}
+  .change.negative{color:var(--red)}
+
+  .price-change{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:2px;
+    min-width:0;
+    line-height:1.15;
+  }
+
+  .price-line,
+  .change-line{
+    font-size:14px;
+    font-weight:500;
+    white-space:nowrap;
+  }
+
+  .change-line.positive{color:var(--green)}
+  .change-line.negative{color:var(--red)}
+
+  .th-sort{
+    cursor:pointer;
+    user-select:none;
+  }
+
+  a.link{text-decoration:none;font-weight:600}
+  a.link:hover{text-decoration:underline}
+  :focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:8px}
+
+  .footer{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    flex-wrap:wrap;
+    color:var(--muted);
+    line-height:1;
+    min-height:24px;
+  }
+
+  .footer-brand{
+    display:inline-flex;
+    align-items:center;
+    line-height:1;
+    flex:0 0 auto;
+  }
+  .footer-brand svg{
+    height:16px;
+    width:auto;
+    display:block;
+  }
+
+  .footer-links{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+    font-size:14px;
+    line-height:1;
+  }
+  .footer-links a{
+    color:var(--footer-link);
+    text-decoration:none;
+    font-weight:500;
+    transition:color .15s ease;
+  }
+  .footer-links a:hover{
+    color:var(--footer-link-hover);
+    text-decoration:underline;
+  }
+  .footer-sep{
+    color:var(--muted);
+    user-select:none;
+  }
+
+  .basezh-logo .logo-blue{fill:#0000FF}
+  .basezh-logo .logo-black{fill:#000000}
+  :root:not(.theme-light) .basezh-logo .logo-blue,
+  :root:not(.theme-light) .basezh-logo .logo-black{
+    fill:#ffffff;
+  }
+
+  /* ===== 简洁滚动条 ===== */
+  .table-scroll,
+  .topbar,
+  body{
+    scrollbar-width:thin;
+    scrollbar-color:var(--scroll-thumb) var(--scroll-track);
+  }
+
+  .table-scroll::-webkit-scrollbar,
+  .topbar::-webkit-scrollbar,
+  body::-webkit-scrollbar{
+    width:var(--scroll-size);
+    height:var(--scroll-size);
+  }
+
+  .table-scroll::-webkit-scrollbar-track,
+  .topbar::-webkit-scrollbar-track,
+  body::-webkit-scrollbar-track{
+    background:var(--scroll-track);
+    border-radius:var(--scroll-radius);
+  }
+
+  .table-scroll::-webkit-scrollbar-thumb,
+  .topbar::-webkit-scrollbar-thumb,
+  body::-webkit-scrollbar-thumb{
+    background:var(--scroll-thumb);
+    border-radius:var(--scroll-radius);
+    border:2px solid transparent;
+    background-clip:padding-box;
+  }
+
+  .table-scroll::-webkit-scrollbar-thumb:hover,
+  .topbar::-webkit-scrollbar-thumb:hover,
+  body::-webkit-scrollbar-thumb:hover{
+    background:var(--scroll-thumb-hover);
+    border:2px solid transparent;
+    background-clip:padding-box;
+  }
+
+  .table-scroll::-webkit-scrollbar-corner,
+  .topbar::-webkit-scrollbar-corner,
+  body::-webkit-scrollbar-corner{
+    background:transparent;
+  }
+
+  @media (max-width:900px){
+    :root{
+      --table-min-width:980px;
+      --logo-size:34px;
+    }
+  }
+
+  @media (max-width:720px){
+    :root{
+      --page-side-padding:12px;
+      --page-top-padding:16px;
+      --footer-bottom-gap:10px;
+      --panel-footer-gap:10px;
+
+      --thead-padding:9px;
+      --row-padding:9px;
+      --table-gap:4px;
+      --logo-size:30px;
+      --table-min-width:600px;
+      --scroll-size:6px;
+    }
+
+    .header{
+      margin-bottom:14px;
+      gap:10px;
+      align-items:flex-start;
+    }
+
+    .title{gap:8px;align-items:flex-start}
+    .base-logo svg{height:20px}
+    .title-text{
+      font-size:20px;
+      line-height:1.1;
+    }
+
+    .theme-toggle{
+      font-size:12px;
+      gap:6px;
+      margin-top:2px;
+    }
+    .theme-label{min-width:34px}
+    .switch{width:40px;height:22px}
+    .knob{width:18px;height:18px}
+    .switch[aria-checked="true"] .knob{left:20px}
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      gap:8px;
+      flex-wrap:nowrap;
+      overflow-x:auto;
+      overflow-y:hidden;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:thin;
+      padding-bottom:2px;
+    }
+
+    #catChips{
+      flex-wrap:nowrap;
+      gap:8px;
+      flex:1 1 auto;
+      min-width:0;
+    }
+
+    #winChips{display:none}
+
+    #catChips .chip{
+      min-width:38px;
+      width:38px;
+      min-height:38px;
+      padding:0;
+      border-radius:11px;
+      font-size:0;
+      flex:0 0 auto;
+    }
+    #catChips .chip .chip-icon{
+      display:block;
+      width:20px;
+      height:20px;
+      border-radius:6px;
+    }
+    #catChips .chip[data-cat="all"]{
+      width:auto;
+      min-width:42px;
+      padding:0 10px;
+      font-size:11px;
+    }
+    #catChips .chip[data-cat="all"] .chip-icon{display:none}
+    #catChips .chip:not([data-cat="all"]) .chip-label{display:none}
+
+    #mobileWinCycle{
+      display:inline-flex;
+      min-width:48px;
+      min-height:38px;
+      padding:0 10px;
+      border-radius:11px;
+      font-size:12px;
+      flex:0 0 auto;
+      margin-left:auto;
+    }
+
+    .content{margin-top:10px}
+    .panel{
+      border-radius:12px;
+      min-height:220px;
+    }
+
+    .thead.mobile{
+      font-size:10px;
+    }
+
+    .rank{font-size:12px}
+    .symbol{font-size:12px}
+    .price-line,
+    .change-line,
+    .age,
+    .volume,
+    .fdv{font-size:11px}
+    .name-line{font-size:10px}
+    .cat-icon{width:14px;height:14px;border-radius:5px}
+    .ca-btn{font-size:9px;height:18px;padding:0 5px}
+
+    .price-change{
+      gap:2px;
+      line-height:1.15;
+    }
+
+    .footer{
+      gap:6px;
+      text-align:center;
+    }
+    .footer-brand svg{height:13px}
+    .footer-links{
+      font-size:11px;
+      gap:6px;
+      justify-content:center;
+    }
+  }
+
+  @media (min-width:721px){
+    #mobileWinCycle{display:none}
+  }
+
+  @media (max-width:420px){
+    :root{
+      --page-side-padding:10px;
+      --page-top-padding:14px;
+      --footer-bottom-gap:8px;
+      --panel-footer-gap:8px;
+      --logo-size:28px;
+      --table-min-width:570px;
+      --table-gap:3px;
+      --scroll-size:4px;
+    }
+
+    .title-text{font-size:18px}
+    .base-logo svg{height:18px}
+
+    #catChips .chip{
+      width:36px;
+      min-width:36px;
+      min-height:36px;
+    }
+    #catChips .chip .chip-icon{
+      width:18px;
+      height:18px;
+    }
+    #catChips .chip[data-cat="all"]{
+      min-width:40px;
+      padding:0 9px;
+    }
+
+    #mobileWinCycle{
+      min-width:44px;
+      min-height:36px;
+      padding:0 9px;
+      font-size:11px;
+    }
+
+    .thead.mobile{font-size:9px}
+    .rank{font-size:11px}
+    .symbol{font-size:11px}
+    .price-line,
+    .change-line,
+    .age,
+    .volume,
+    .fdv{font-size:10px}
+    .name{display:none}
+    .footer-links{font-size:10px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <div class="header" id="header">
+    <div class="title">
+      <span class="base-logo" aria-label="Base logo" title="Base">
+        <svg width="36" height="12" viewBox="0 0 668 219" xmlns="http://www.w3.org/2000/svg"><path d="M171.459 75.1071C171.459 70.9 171.459 68.7965 172.251 67.1784C173.008 65.6291 174.258 64.3763 175.805 63.6173C177.419 62.8246 179.519 62.8246 183.718 62.8246H314.37C318.569 62.8246 320.668 62.8246 322.283 63.6173C323.829 64.3763 325.08 65.6291 325.837 67.1784C326.628 68.7965 326.628 70.9 326.628 75.1071V206.017C326.628 210.224 326.628 212.327 325.837 213.945C325.08 215.495 323.829 216.747 322.283 217.506C320.668 218.299 318.569 218.299 314.37 218.299H183.718C179.519 218.299 177.419 218.299 175.805 217.506C174.258 216.747 173.008 215.495 172.251 213.945C171.459 212.327 171.459 210.224 171.459 206.017V75.1071Z" fill="currentColor"/><path d="M342.145 75.1071C342.145 70.9 342.145 68.7965 342.936 67.1784C343.694 65.6291 344.944 64.3763 346.491 63.6173C348.105 62.8246 350.205 62.8246 354.404 62.8246H485.056C489.255 62.8246 491.354 62.8246 492.969 63.6173C494.515 64.3763 495.766 65.6291 496.523 67.1784C497.314 68.7965 497.314 70.9 497.314 75.1071V206.017C497.314 210.224 497.314 212.327 496.523 213.945C495.766 215.495 494.515 216.747 492.969 217.506C491.354 218.299 489.255 218.299 485.056 218.299H354.404C350.205 218.299 348.105 218.299 346.491 217.506C344.944 216.747 343.694 215.495 342.936 213.945C342.145 212.327 342.145 210.224 342.145 206.017V75.1071Z" fill="currentColor"/><path d="M512.831 75.1071C512.831 70.9 512.831 68.7965 513.622 67.1784C514.38 65.6291 515.63 64.3763 517.176 63.6173C518.791 62.8246 520.891 62.8246 525.09 62.8246H655.742C659.941 62.8246 662.04 62.8246 663.655 63.6173C665.201 64.3763 666.452 65.6291 667.209 67.1784C668 68.7965 668 70.9 668 75.1071V206.017C668 210.224 668 212.327 667.209 213.945C666.452 215.495 665.201 216.747 663.655 217.506C662.04 218.299 659.941 218.299 655.742 218.299H525.09C520.891 218.299 518.791 218.299 517.176 217.506C515.63 216.747 514.38 215.495 513.622 213.945C512.831 212.327 512.831 210.224 512.831 206.017V75.1071Z" fill="currentColor"/><path d="M1.56459 4.98853C0.773438 6.60664 0.773438 8.71018 0.773438 12.9173V206.017C0.773438 210.224 0.773438 212.327 1.56459 213.945C2.32208 215.495 3.57241 216.747 5.11864 217.506C6.73358 218.299 8.83298 218.299 13.0318 218.299H143.684C147.883 218.299 149.982 218.299 151.597 217.506C153.143 216.747 154.394 215.495 155.151 213.945C155.942 212.327 155.942 210.224 155.942 206.017V75.1071C155.942 70.9 155.942 68.7965 155.151 67.1784C154.394 65.6291 153.143 64.3763 151.597 63.6173C149.982 62.8246 147.883 62.8246 143.684 62.8246H75.0994C70.9006 62.8246 68.8012 62.8246 67.1862 62.0319C65.64 61.2729 64.3897 60.0201 63.6322 58.4708C62.841 56.8527 62.841 54.7492 62.841 50.5421V12.9173C62.841 8.71018 62.841 6.60664 62.0499 4.98853C61.2924 3.43925 60.0421 2.18646 58.4958 1.42747C56.8809 0.634766 54.7815 0.634766 50.5827 0.634766H13.0318C8.83298 0.634766 6.73358 0.634766 5.11864 1.42747C3.57241 2.18646 2.32208 3.43925 1.56459 4.98853Z" fill="currentColor"/></svg>
+      </span>
+      <div class="title-text">Trending Tokens</div>
+    </div>
+    <div class="theme-toggle">
+      <span class="theme-label" id="themeLabel">Dark</span>
+      <button id="themeSwitch" class="switch" type="button" role="switch" aria-checked="false" aria-label="Toggle theme">
+        <span class="knob"></span>
+      </button>
+    </div>
+  </div>
+
+  <div class="topbar" id="topbar">
+    <div class="chips" id="catChips">
+      <div class="chip active" data-cat="all">
+        <span class="chip-label">all</span>
+      </div>
+      <div class="chip" data-cat="virtual">
+        <img class="chip-icon" src="https://pbs.twimg.com/profile_images/2009228951621914626/U6ZpmYq3_400x400.jpg" alt="virtual">
+        <span class="chip-label">virtual</span>
+      </div>
+      <div class="chip" data-cat="clanker">
+        <img class="chip-icon" src="https://pbs.twimg.com/profile_images/1953706842032324608/Arf6RRS3_400x400.jpg" alt="clanker">
+        <span class="chip-label">clanker</span>
+      </div>
+      <div class="chip" data-cat="doppler">
+        <img class="chip-icon" src="https://pbs.twimg.com/profile_images/1989072411757568001/hKlsQbpS_400x400.jpg" alt="doppler">
+        <span class="chip-label">doppler</span>
+      </div>
+      <div class="chip" data-cat="aerodrome">
+        <img class="chip-icon" src="https://pbs.twimg.com/profile_images/1691174347388399617/AnNwWdzS_400x400.jpg" alt="aerodrome">
+        <span class="chip-label">aerodrome</span>
+      </div>
+      <div class="chip" data-cat="flaunch">
+        <img class="chip-icon" src="https://pbs.twimg.com/profile_images/1966758436588126208/3Bb938ZU_400x400.jpg" alt="flaunch">
+        <span class="chip-label">flaunch</span>
+      </div>
+    </div>
+
+    <div class="chips" id="winChips">
+      <div class="chip" data-win="1h">1h</div>
+      <div class="chip" data-win="6h">6h</div>
+      <div class="chip active" data-win="24h">24h</div>
+    </div>
+
+    <button class="cycle-btn" id="mobileWinCycle" type="button" aria-label="Switch time window">24h</button>
+  </div>
+
+  <div class="content" id="content">
+    <div class="panel" id="panel">
+      <div class="table-scroll">
+        <div class="table-inner">
+          <div class="thead desktop" id="theadDesktop">
+            <div>Rank</div>
+            <div>Token</div>
+            <div>Price</div>
+            <div class="th-sort" data-sort="change">Change <span class="arrow" id="arrow-change-desktop"></span></div>
+            <div class="th-sort" data-sort="volume">Volume <span class="arrow" id="arrow-volume-desktop">▼</span></div>
+            <div class="th-sort" data-sort="fdv">FDV <span class="arrow" id="arrow-fdv-desktop"></span></div>
+            <div>Age</div>
+          </div>
+
+          <div class="thead mobile" id="theadMobile" style="display:none;">
+            <div>Rank</div>
+            <div>Token</div>
+            <div class="th-sort" data-sort="change">Price / Change <span class="arrow" id="arrow-change-mobile"></span></div>
+            <div class="th-sort" data-sort="volume">Volume <span class="arrow" id="arrow-volume-mobile">▼</span></div>
+            <div class="th-sort" data-sort="fdv">FDV <span class="arrow" id="arrow-fdv-mobile"></span></div>
+            <div>Age</div>
+          </div>
+
+          <div class="rows" id="rows"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer" id="footer">
+    <a class="footer-brand" href="https://www.basezh.org/" target="_blank" rel="noopener" aria-label="Base 中文台">
+      <svg class="basezh-logo" width="1344" height="200" viewBox="0 0 1344 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path class="logo-blue" d="M1061.23 47.4572L1030.42 53.9191C1048.38 119.355 1110.27 163.204 1149.53 179.394C1161.78 159.156 1157.55 165.078 1165.54 151.885C1127.61 135.021 1079.86 110.869 1061.23 47.4572Z"/>
+        <path class="logo-blue" d="M1106.21 47.4572L1137.02 53.9314C1119.05 119.492 1057.17 163.424 1017.91 179.645C1005.66 159.369 1009.88 165.301 1001.9 152.084C1039.83 135.187 1087.58 110.99 1106.21 47.4572Z"/>
+        <rect class="logo-blue" x="1004.5" y="26.9342" width="159.7" height="28.333"/>
+        <rect class="logo-blue" x="1068.4" y="2.64697" width="31.9399" height="24.2855"/>
+        <rect class="logo-blue" x="890.014" y="2.64709" width="31.5407" height="176.663"/>
+        <rect class="logo-blue" x="830.122" y="32.3315" width="31.9399" height="94.4435"/>
+        <rect class="logo-blue" x="949.898" y="32.3315" width="31.9399" height="94.4435"/>
+        <rect class="logo-blue" x="862.068" y="32.3315" width="87.8347" height="28.333"/>
+        <rect class="logo-blue" x="862.068" y="90.3484" width="87.8347" height="28.333"/>
+        <g clip-path="url(#clip0_2659_2)">
+          <path class="logo-black" d="M334.996 183.343C320.706 183.343 306.926 178.118 298.807 164.339H294.092V179.422H261.603V0H294.092V65.2731H298.807C307.147 50.9833 322.74 45.4758 336.809 45.4758C371.91 45.4758 395.628 73.5455 395.628 113.072C395.628 152.598 369.593 183.275 334.996 183.275V183.348V183.343ZM327.964 154.264C347.982 154.264 362.267 137.872 362.267 114.449C362.267 91.0253 347.688 74.6334 327.964 74.6334C308.241 74.6334 294.166 90.2264 294.166 114.449C294.166 138.671 308.456 154.264 327.964 154.264ZM455.677 183.343C430.73 183.343 410.422 168.259 410.422 143.527C410.422 118.795 432.758 105.015 459.813 102.187L498.037 98.2722V91.0197C498.037 79.8519 488.897 72.0157 472.8 72.0157C456.703 72.0157 448.578 78.7583 445.75 88.9119H414.564C417.681 64.1795 438.209 45.4702 472.8 45.4702C507.391 45.4702 528.208 61.5731 528.208 93.0481V156.508C528.208 164.56 529.007 175.727 529.512 178.844V179.354H498.326C498.037 174.928 498.037 170.798 498.037 166.373H493.323C485.271 179.354 471.202 183.269 455.609 183.269L455.683 183.343H455.677ZM464.528 158.905C485.849 158.905 498.105 142.802 498.105 126.416V119.888L469.457 123.299C451.762 125.401 443.201 130.552 443.201 142.009C443.201 153.465 452.051 158.905 464.522 158.905H464.528ZM606.315 183.343C573.531 183.343 550.108 166.951 546.482 141.204H578.466C582.093 152.661 594.059 157.596 606.536 157.596C619.013 157.596 629.671 152.157 629.671 142.513C629.671 132.869 619.806 130.257 606.247 127.934L592.467 125.611C566.432 121.186 550.329 110.233 550.329 86.8834C550.329 63.5336 572.664 45.5438 603.635 45.5438C634.606 45.5438 653.825 59.6127 659.264 84.0561H628.078C624.452 74.4124 614.809 70.5652 603.856 70.5652C592.904 70.5652 582.025 76.2936 582.025 84.345C582.025 92.3965 588.767 95.2976 602.842 97.615L616.622 99.9381C641.858 104.074 661.078 114.517 661.078 139.753C661.078 164.99 638.158 183.484 606.173 183.484L606.321 183.337L606.315 183.343ZM742.59 183.343C702.553 183.343 676.013 155.998 676.013 114.154C676.013 72.3103 704.083 45.4702 742.884 45.4702C781.685 45.4702 806.854 75.642 806.854 115.457V121.186H707.783C709.381 142.796 724.464 155.488 742.669 155.488C760.874 155.488 766.891 150.264 771.317 141.198H804.605C797.862 165.642 773.634 183.337 742.669 183.337H742.595L742.59 183.343ZM775.084 99.6491C772.472 82.2429 758.693 72.0894 742.595 72.0894C726.498 72.0894 711.409 81.954 708.293 99.6491H775.164H775.09H775.084Z"/>
+        </g>
+        <rect class="logo-blue" x="1195.94" y="96.4969" width="31.725" height="83.2783"/>
+        <rect class="logo-blue" x="1293.76" y="96.4971" width="31.725" height="83.2783"/>
+        <rect class="logo-blue" x="1227.66" y="96.4971" width="87.8347" height="28.333"/>
+        <rect class="logo-blue" x="1227.66" y="142.77" width="87.8347" height="28.333"/>
+        <path class="logo-blue" d="M1275.92 35.694L1297.07 19.1706C1312.93 37.6769 1297.07 19.1706 1312.93 37.6769C1327.47 55.5222 1312.93 37.6769 1327.47 55.5222C1343.99 75.4658 1327.47 55.5222 1343.99 75.4658L1321.3 91.8501C1310.28 78.9371 1310.28 78.8798 1306.98 74.6894C1301.81 68.1357 1299.9 66.0633 1293.76 58.166C1287.62 50.2687 1283.85 44.9472 1275.92 35.694ZM1192.9 86.9348C1192.53 85.2357 1191.79 82.8691 1190.69 79.835C1189.7 76.6795 1188.6 73.4633 1187.37 70.1865C1186.26 66.7883 1185.15 63.9362 1184.05 61.6303C1186.87 61.0235 1189.4 59.8705 1191.61 58.1714C1193.95 56.4723 1196.65 54.2271 1199.73 51.4357C1201.33 49.9793 1203.6 47.6734 1206.55 44.5179C1209.5 41.241 1212.76 37.418 1216.33 33.0489C1219.9 28.5584 1223.46 23.7039 1227.03 18.4852C1230.72 13.2665 1234.04 7.98714 1236.99 2.64709L1264.11 14.1161C1257.41 25.78 1252.12 33.0387 1245.85 40.3206C1239.57 47.6025 1237.61 50.3137 1230.97 56.7461C1224.45 63.057 1214.61 68.8515 1208.21 73.8274V74.5556C1208.21 74.5556 1207.41 74.9804 1205.81 75.8299C1204.34 76.6795 1202.55 77.7718 1200.46 79.1068C1198.5 80.3204 1196.71 81.6554 1195.11 83.1118C1193.64 84.5682 1192.9 85.8425 1192.9 86.9348ZM1192.9 86.9348L1192.53 66.3635L1210.06 57.2612L1320.93 54.5305C1321.05 58.1714 1321.36 62.3585 1321.85 67.0917C1322.35 71.8249 1323.01 76.3154 1323.5 79.1068C1286.49 80.6379 1301.03 80.0807 1286.49 80.6379C1271.95 81.1951 1254.1 81.498 1245.85 81.8375C1236.99 82.2016 1229.55 82.5657 1223.52 82.9298C1217.5 83.2939 1212.58 83.6579 1208.77 84.022C1204.95 84.3861 1201.82 84.8109 1199.36 85.2964C1197.02 85.7818 1194.87 86.328 1192.9 86.9348Z"/>
+        <g clip-path="url(#clip1_2659_2)">
+          <path class="logo-blue" d="M106.435 0.532776C108.744 -0.113516 111.172 -0.176917 113.513 0.350159L199.459 19.7916C206.644 21.4169 211.451 28.1943 210.616 35.5113L198.311 143.1C197.727 148.215 194.457 152.633 189.738 154.691L89.5977 198.33C84.929 200.363 79.5386 199.785 75.4033 196.817L17.4072 155.118C14.0939 152.733 11.9411 149.062 11.4893 145.002L0.0869141 42.9097C-0.697482 35.8815 3.72669 29.3175 10.5352 27.4097L106.435 0.532776ZM189.426 49.3863C185.472 46.2236 112.597 67.9739 105.901 74.5504C99.1681 81.1587 99.0994 154.685 104.923 156.775C110.621 158.814 177.575 132.359 182.259 126.736C186.934 121.126 193.304 52.4935 189.426 49.3863Z"/>
+        </g>
+        <defs>
+          <clipPath id="clip0_2659_2">
+            <rect width="725.256" height="183.49" fill="white" transform="translate(81.5925)"/>
+          </clipPath>
+          <clipPath id="clip1_2659_2">
+            <rect width="210.711" height="199.535" fill="white"/>
+          </clipPath>
+        </defs>
+      </svg>
+    </a>
+
+    <div class="footer-links">
+      <a href="https://www.basezh.org/" target="_blank" rel="noopener">basezh.org</a>
+      <span class="footer-sep">|</span>
+      <a href="https://x.com/basezh" target="_blank" rel="noopener">Twitter</a>
+      <span class="footer-sep">|</span>
+      <a href="https://farcaster.xyz/basezh" target="_blank" rel="noopener">Farcaster</a>
+      <span class="footer-sep">|</span>
+      <a href="https://t.me/basezh" target="_blank" rel="noopener">Telegram</a>
+    </div>
+  </footer>
+</div>
+
+<script>
+  const themeSwitch=document.getElementById('themeSwitch');
+  const themeLabel=document.getElementById('themeLabel');
+
+  function applyTheme(mode){
+    if(mode==='light'){
+      document.documentElement.classList.add('theme-light');
+      themeSwitch.setAttribute('aria-checked','true');
+      themeLabel.textContent='Light';
+    }else{
+      document.documentElement.classList.remove('theme-light');
+      themeSwitch.setAttribute('aria-checked','false');
+      themeLabel.textContent='Dark';
+    }
+    localStorage.setItem('theme-mode',mode);
+  }
+
+  themeSwitch.addEventListener('click',()=>{
+    const isLight=document.documentElement.classList.toggle('theme-light');
+    applyTheme(isLight?'light':'dark');
+    requestAnimationFrame(updateLayout);
+  });
+
+  (function(){
+    const saved=localStorage.getItem('theme-mode');
+    applyTheme(saved==='light'?'light':'dark');
+  })();
+
+  const wrapEl = document.getElementById('wrap');
+  const headerEl = document.getElementById('header');
+  const topbarEl = document.getElementById('topbar');
+  const contentEl = document.getElementById('content');
+  const footerEl = document.getElementById('footer');
+  const panelEl = document.getElementById('panel');
+
+  function pxVar(name){
+    return parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name)) || 0;
+  }
+
+  function outerHeight(el){
+    const cs = getComputedStyle(el);
+    return el.offsetHeight + (parseFloat(cs.marginTop)||0) + (parseFloat(cs.marginBottom)||0);
+  }
+
+  function updateLayout(){
+    const viewportH = window.innerHeight;
+    const wrapStyle = getComputedStyle(wrapEl);
+
+    const wrapPaddingTop = parseFloat(wrapStyle.paddingTop) || 0;
+    const wrapPaddingBottom = parseFloat(wrapStyle.paddingBottom) || 0;
+
+    const headerH = outerHeight(headerEl);
+    const topbarH = outerHeight(topbarEl);
+    const footerH = outerHeight(footerEl);
+
+    const contentMarginTop = parseFloat(getComputedStyle(contentEl).marginTop) || 0;
+    const panelFooterGap = pxVar('--panel-footer-gap');
+
+    const panelHeight =
+      viewportH
+      - wrapPaddingTop
+      - wrapPaddingBottom
+      - headerH
+      - topbarH
+      - contentMarginTop
+      - panelFooterGap
+      - footerH;
+
+    panelEl.style.setProperty('--panel-height', `${Math.max(220, Math.floor(panelHeight))}px`);
+  }
+
+  function isMobile(){
+    return window.innerWidth <= 720;
+  }
+
+  function updateHeaderVisibility(){
+    document.getElementById('theadDesktop').style.display = isMobile() ? 'none' : 'grid';
+    document.getElementById('theadMobile').style.display = isMobile() ? 'grid' : 'none';
+  }
+
+  window.addEventListener('resize', ()=>{
+    updateHeaderVisibility();
+    render();
+    updateLayout();
+  });
+
+  window.addEventListener('load', updateLayout);
+
+  if (window.ResizeObserver){
+    const ro = new ResizeObserver(()=>updateLayout());
+    ro.observe(headerEl);
+    ro.observe(topbarEl);
+    ro.observe(footerEl);
+  }
+
+  const ICONS={
+    clanker:"https://pbs.twimg.com/profile_images/1953706842032324608/Arf6RRS3_400x400.jpg",
+    doppler:"https://pbs.twimg.com/profile_images/1989072411757568001/hKlsQbpS_400x400.jpg",
+    virtual:"https://pbs.twimg.com/profile_images/2009228951621914626/U6ZpmYq3_400x400.jpg",
+    aerodrome:"https://pbs.twimg.com/profile_images/1691174347388399617/AnNwWdzS_400x400.jpg",
+    flaunch:"https://pbs.twimg.com/profile_images/1966758436588126208/3Bb938ZU_400x400.jpg"
+  };
+
+  const WINDOWS = ['1h','6h','24h'];
+
+  const state={
+    category:'all',
+    window:'24h',
+    rows:[],
+    sort:{key:'volume',dir:'desc'}
+  };
+
+  const fmtUSD=(n)=> (n==null||isNaN(n)) ? '—'
+    : (Math.abs(n)>=1e9?`$${(n/1e9).toFixed(1)}B`
+    : Math.abs(n)>=1e6?`$${(n/1e6).toFixed(1)}M`
+    : Math.abs(n)>=1e3?`$${(n/1e3).toFixed(1)}K`
+    : `$${Number(n).toFixed(2)}`);
+
+  function fmtPrice(n){
+    if(n==null || isNaN(n)) return '—';
+    const v = Number(n);
+    if (v >= 1000) return `$${v.toFixed(0)}`;
+    if (v >= 1) return `$${v.toFixed(2)}`;
+    if (v >= 0.01) return `$${v.toFixed(4)}`;
+    return `$${v.toFixed(8)}`;
+  }
+
+  function daysFrom(ms){
+    if(!ms) return '—';
+    const d=Math.floor((Date.now()-Number(ms))/(1000*60*60*24));
+    return `${d}d`;
+  }
+
+  function syncWindowUI(){
+    document.querySelectorAll('#winChips .chip').forEach(chip=>{
+      chip.classList.toggle('active', chip.dataset.win === state.window);
+    });
+    const mobileBtn = document.getElementById('mobileWinCycle');
+    if(mobileBtn) mobileBtn.textContent = state.window;
+  }
+
+  const chooseBestPair=(pairs=[])=>{
+    if(!pairs.length) return null;
+
+    const basePairs = pairs.filter(pair => {
+      const url = pair.url || '';
+      const network = (url.split('/')[3] || '').toLowerCase();
+      return network === 'base';
+    });
+
+    if(basePairs.length > 0) {
+      return [...basePairs].sort((a,b)=>{
+        const la=a.liquidity?.usd??0, lb=b.liquidity?.usd??0;
+        if(lb!==la) return lb-la;
+        return (b.volume?.h24??0)-(a.volume?.h24??0);
+      })[0];
+    }
+
+    return [...pairs].sort((a,b)=>{
+      const la=a.liquidity?.usd??0, lb=b.liquidity?.usd??0;
+      if(lb!==la) return lb-la;
+      return (b.volume?.h24??0)-(a.volume?.h24??0);
+    })[0];
+  };
+
+  async function fetchDex(address){
+    const res=await fetch(`https://api.dexscreener.com/latest/dex/tokens/${address}`);
+    if(!res.ok) return null;
+    const data=await res.json();
+    const p=chooseBestPair(data?.pairs);
+    if(!p) return null;
+    const url=p.url||'';
+    const network=(url.split('/')[3]||'').toLowerCase();
+
+    if(network !== 'base') return null;
+
+    return {
+      url,
+      image:p.info?.imageUrl||'',
+      price: Number(p.priceUsd)||null,
+      chg1h: p.priceChange?.h1 ?? null,
+      chg6h: p.priceChange?.h6 ?? null,
+      chg24h: p.priceChange?.h24 ?? null,
+      vol1h: p.volume?.h1 ?? null,
+      vol6h: p.volume?.h6 ?? null,
+      vol24h: p.volume?.h24 ?? null,
+      fdv: p.fdv ?? null,
+      createdAt: p.pairCreatedAt ?? null,
+      baseSymbol: p.baseToken?.symbol || ''
+    };
+  }
+
+  async function fetchDune(){
+    const res=await fetch('/api/dune-data');
+    if(!res.ok){
+      let msg='数据请求失败';
+      try{ const j=await res.json(); if(j.error) msg=j.error; }catch{}
+      throw new Error(msg);
+    }
+    const data=await res.json();
+    const rows=data.rows;
+    if(!Array.isArray(rows)||!rows.length) throw new Error(data.error||'暂无数据');
+    return rows;
+  }
+
+  function computeView(){
+    const filtered = state.rows.filter(r=> state.category==='all' ? true : r.source===state.category);
+    const win=state.window;
+
+    const mapped = filtered.map(r=>{
+      const price = r.dex?.price ?? null;
+      const change = win==='1h' ? r.dex?.chg1h : (win==='6h' ? r.dex?.chg6h : r.dex?.chg24h);
+      const volume = win==='1h' ? r.dex?.vol1h : (win==='6h' ? r.dex?.vol6h : r.dex?.vol24h);
+      const fdv = r.dex?.fdv ?? null;
+      return {...r, _price:price, _change:change, _volume:volume??0, _fdv:fdv};
+    });
+
+    const {key:k,dir}=state.sort;
+    const sign=dir==='asc'?1:-1;
+
+    mapped.sort((a,b)=>{
+      let av, bv;
+      if(k === 'change'){
+        av = a._change;
+        bv = b._change;
+      }else if(k === 'fdv'){
+        av = a._fdv;
+        bv = b._fdv;
+      }else{
+        av = a._volume;
+        bv = b._volume;
+      }
+
+      const avn=(av==null?(dir==='asc'?Number.POSITIVE_INFINITY:Number.NEGATIVE_INFINITY):av);
+      const bvn=(bv==null?(dir==='asc'?Number.POSITIVE_INFINITY:Number.NEGATIVE_INFINITY):bv);
+      return (avn-bvn)*sign;
+    });
+
+    return mapped.map((r,i)=>({...r,_rank:i+1}));
+  }
+
+  function updateSortIndicators(){
+    const ids = [
+      'arrow-change-desktop',
+      'arrow-volume-desktop',
+      'arrow-fdv-desktop',
+      'arrow-change-mobile',
+      'arrow-volume-mobile',
+      'arrow-fdv-mobile'
+    ];
+    ids.forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.textContent='';
+    });
+
+    const suffixes = ['desktop','mobile'];
+    suffixes.forEach(suffix=>{
+      const target = document.getElementById(`arrow-${state.sort.key}-${suffix}`);
+      if(target) target.textContent = state.sort.dir === 'asc' ? '▲' : '▼';
+    });
+  }
+
+  async function copyToClipboard(text, btn){
+    try{
+      await navigator.clipboard.writeText(text);
+      btn.classList.add('copied');
+      setTimeout(()=>btn.classList.remove('copied'),800);
+    }catch(e){}
+  }
+
+  function render(){
+    updateHeaderVisibility();
+    updateSortIndicators();
+    syncWindowUI();
+
+    const wrap=document.getElementById('rows');
+    wrap.innerHTML='';
+    const rows=computeView();
+    const mobile = isMobile();
+
+    for(const r of rows){
+      const chgClass = r._change==null ? '' : (r._change>=0?'positive':'negative');
+      const fullName=r.name||'';
+      const shortName=fullName.length>22?(fullName.slice(0,22)+'…'):fullName;
+
+      const el=document.createElement('div');
+      el.className=`row ${mobile ? 'mobile' : 'desktop'}`;
+
+      if(mobile){
+        el.innerHTML=`
+          <div class="rank">#${r._rank}</div>
+          <div class="token">
+            <img class="logo"
+                 src="${r.dex?.image || 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22><rect width=%2240%22 height=%2240%22 fill=%22%23cccccc%22/><text x=%2250%25%22 y=%2255%25%22 text-anchor=%22middle%22 font-size=%2225%22 font-weight=%22600%22 dy=%22.3em%22 fill=%22%23000%22>?</text></svg>'}"
+                 alt="token logo"
+                 onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22><rect width=%2240%22 height=%2240%22 fill=%22%23cccccc%22/><text x=%2250%25%22 y=%2255%25%22 text-anchor=%22middle%22 font-size=%2225%22 font-weight=%22600%22 dy=%22.3em%22 fill=%22%23000%22>?</text></svg>'">
+            <div class="tinfo">
+              <div class="symbol-line">
+                <a class="symbol link" href="${r.dex?.url||'#'}" target="_blank" rel="noopener">${r.dex?.baseSymbol || r.symbol || '—'}</a>
+                ${r.source!=='all'?`<img class="cat-icon" src="${ICONS[r.source]||''}" alt="${r.source}">`:''}
+              </div>
+              <div class="subline">
+                <div class="name-line">
+                  <span class="name" title="${fullName.replace(/"/g,'&quot;')}">${shortName}</span>
+                  <button class="ca-btn" title="Copy Contract Address">CA</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="price-change">
+            <div class="price-line">${fmtPrice(r._price)}</div>
+            <div class="change-line ${chgClass}">${(r._change!=null)?`${r._change>0?'+':''}${Number(r._change).toFixed(2)}%`:'—'}</div>
+          </div>
+
+          <div class="volume">${fmtUSD(r._volume)}</div>
+          <div class="fdv">${fmtUSD(r._fdv)}</div>
+          <div class="age">${r.dex?.createdAt ? daysFrom(r.dex.createdAt) : '—'}</div>
+        `;
+      } else {
+        el.innerHTML=`
+          <div class="rank">#${r._rank}</div>
+          <div class="token">
+            <img class="logo"
+                 src="${r.dex?.image || 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22><rect width=%2240%22 height=%2240%22 fill=%22%23cccccc%22/><text x=%2250%25%22 y=%2255%25%22 text-anchor=%22middle%22 font-size=%2225%22 font-weight=%22600%22 dy=%22.3em%22 fill=%22%23000%22>?</text></svg>'}"
+                 alt="token logo"
+                 onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22><rect width=%2240%22 height=%2240%22 fill=%22%23cccccc%22/><text x=%2250%25%22 y=%2255%25%22 text-anchor=%22middle%22 font-size=%2225%22 font-weight=%22600%22 dy=%22.3em%22 fill=%22%23000%22>?</text></svg>'">
+            <div class="tinfo">
+              <div class="symbol-line">
+                <a class="symbol link" href="${r.dex?.url||'#'}" target="_blank" rel="noopener">${r.dex?.baseSymbol || r.symbol || '—'}</a>
+                ${r.source!=='all'?`<img class="cat-icon" src="${ICONS[r.source]||''}" alt="${r.source}">`:''}
+              </div>
+              <div class="subline">
+                <div class="name-line">
+                  <span class="name" title="${fullName.replace(/"/g,'&quot;')}">${shortName}</span>
+                  <button class="ca-btn" title="Copy Contract Address">CA</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="price">${fmtPrice(r._price)}</div>
+          <div class="change ${chgClass}">${(r._change!=null)?`${r._change>0?'+':''}${Number(r._change).toFixed(2)}%`:'—'}</div>
+          <div class="volume">${fmtUSD(r._volume)}</div>
+          <div class="fdv">${fmtUSD(r._fdv)}</div>
+          <div class="age">${r.dex?.createdAt ? daysFrom(r.dex.createdAt) : '—'}</div>
+        `;
+      }
+
+      el.querySelector('.ca-btn').addEventListener('click',()=>copyToClipboard(r.address, el.querySelector('.ca-btn')));
+      wrap.appendChild(el);
+    }
+
+    requestAnimationFrame(updateLayout);
+  }
+
+  document.addEventListener('click', e=>{
+    const th=e.target.closest('.th-sort');
+    if(!th) return;
+    const key=th.dataset.sort;
+    if(!key) return;
+
+    if(state.sort.key===key){
+      state.sort.dir=state.sort.dir==='asc'?'desc':'asc';
+    }else{
+      state.sort.key=key;
+      state.sort.dir='desc';
+    }
+    render();
+  });
+
+  document.getElementById('catChips').addEventListener('click', e=>{
+    const c=e.target.closest('.chip');
+    if(!c) return;
+    [...e.currentTarget.children].forEach(x=>x.classList.remove('active'));
+    c.classList.add('active');
+    state.category=c.dataset.cat;
+    render();
+  });
+
+  document.getElementById('winChips').addEventListener('click', e=>{
+    const c=e.target.closest('.chip');
+    if(!c) return;
+    state.window=c.dataset.win;
+    state.sort={key:'volume',dir:'desc'};
+    render();
+  });
+
+  document.getElementById('mobileWinCycle').addEventListener('click', ()=>{
+    const idx = WINDOWS.indexOf(state.window);
+    state.window = WINDOWS[(idx + 1) % WINDOWS.length];
+    state.sort={key:'volume',dir:'desc'};
+    render();
+  });
+
+  (async function init(){
+    try{
+      updateHeaderVisibility();
+      syncWindowUI();
+      updateSortIndicators();
+
+      const duneRows=await fetchDune();
+      const concurrency=8, out=[]; let i=0;
+
+      async function worker(){
+        while(i<duneRows.length){
+          const idx=i++;
+          const r=duneRows[idx];
+          try{
+            out[idx] = {...r, dex: await fetchDex(r.address)};
+          }catch{
+            out[idx] = {...r, dex:null};
+          }
+          state.rows = out.filter(Boolean);
+          render();
+        }
+      }
+
+      await Promise.all(Array.from({length:concurrency}, worker));
+      state.rows = out.filter(Boolean);
+      render();
+      updateLayout();
+    }catch(e){
+      console.error(e);
+      document.getElementById('rows').innerHTML = `<div style="padding:18px;color:#fc401f">加载失败：${e.message}</div>`;
+      updateLayout();
+    }
+  })();
+</script>
+</body>
+</html>
