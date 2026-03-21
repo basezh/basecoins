@@ -1172,22 +1172,6 @@
     }catch(e){}
   }
 
-  let dexLoadRenderTimer = null;
-  function scheduleRenderWhileDexLoading(){
-    if(dexLoadRenderTimer) clearTimeout(dexLoadRenderTimer);
-    dexLoadRenderTimer = setTimeout(()=>{
-      dexLoadRenderTimer = null;
-      render();
-    }, 120);
-  }
-
-  function flushDexLoadRender(){
-    if(dexLoadRenderTimer){
-      clearTimeout(dexLoadRenderTimer);
-      dexLoadRenderTimer = null;
-    }
-  }
-
   function render(){
     updateHeaderVisibility();
     updateSortIndicators();
@@ -1320,25 +1304,28 @@
       updateSortIndicators();
 
       const duneRows=await fetchDune();
-      const concurrency=8, out=[]; let i=0;
+      state.rows=duneRows.map(r=>({...r,dex:null}));
+      render();
+      updateLayout();
+
+      const concurrency=8;
+      const out=new Array(duneRows.length);
+      let i=0;
 
       async function worker(){
         while(i<duneRows.length){
           const idx=i++;
           const r=duneRows[idx];
           try{
-            out[idx] = {...r, dex: await fetchDex(r.address)};
+            out[idx]={...r,dex:await fetchDex(r.address)};
           }catch{
-            out[idx] = {...r, dex:null};
+            out[idx]={...r,dex:null};
           }
-          state.rows = out.filter(Boolean);
-          scheduleRenderWhileDexLoading();
         }
       }
 
-      await Promise.all(Array.from({length:concurrency}, worker));
-      flushDexLoadRender();
-      state.rows = out.filter(Boolean);
+      await Promise.all(Array.from({length:concurrency},()=>worker()));
+      state.rows=out;
       render();
       updateLayout();
     }catch(e){
