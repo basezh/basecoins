@@ -977,9 +977,14 @@
     document.getElementById('theadMobile').style.display = isMobile() ? 'grid' : 'none';
   }
 
+  let lastMobileLayout = isMobile();
   window.addEventListener('resize', ()=>{
     updateHeaderVisibility();
-    render();
+    const m = isMobile();
+    if(m !== lastMobileLayout){
+      lastMobileLayout = m;
+      render();
+    }
     updateLayout();
   });
 
@@ -1167,6 +1172,22 @@
     }catch(e){}
   }
 
+  let dexLoadRenderTimer = null;
+  function scheduleRenderWhileDexLoading(){
+    if(dexLoadRenderTimer) clearTimeout(dexLoadRenderTimer);
+    dexLoadRenderTimer = setTimeout(()=>{
+      dexLoadRenderTimer = null;
+      render();
+    }, 120);
+  }
+
+  function flushDexLoadRender(){
+    if(dexLoadRenderTimer){
+      clearTimeout(dexLoadRenderTimer);
+      dexLoadRenderTimer = null;
+    }
+  }
+
   function render(){
     updateHeaderVisibility();
     updateSortIndicators();
@@ -1311,11 +1332,12 @@
             out[idx] = {...r, dex:null};
           }
           state.rows = out.filter(Boolean);
-          render();
+          scheduleRenderWhileDexLoading();
         }
       }
 
       await Promise.all(Array.from({length:concurrency}, worker));
+      flushDexLoadRender();
       state.rows = out.filter(Boolean);
       render();
       updateLayout();
