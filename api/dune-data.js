@@ -1,9 +1,26 @@
-import {
-  createRedis,
-  readCache,
-  pullDuneRows,
-  writeCache,
-} from '../lib/dune-cache.js';
+const DUNE_QUERY_URL =
+  'https://api.dune.com/api/v1/query/6728582/results?limit=1000';
+
+function rowsFromDuneBody(data) {
+  return (data?.result?.rows ?? []).map((r) => ({
+    symbol: r.symbol,
+    name: r.name,
+    address: (r.token_address || '').toLowerCase(),
+    source: (r.source || '').toLowerCase(),
+  }));
+}
+
+async function pullDuneRows(apiKey) {
+  const res = await fetch(DUNE_QUERY_URL, {
+    headers: { 'X-Dune-API-Key': apiKey },
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`Dune HTTP ${res.status}: ${t.slice(0, 200)}`);
+  }
+  const data = await res.json();
+  return rowsFromDuneBody(data);
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -12,43 +29,22 @@ export default async function handler(req, res) {
   }
 
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.setHeader(
-    'Cache-Control',
-    'public, s-maxage=60, stale-while-revalidate=300'
-  );
+  res.setHeader('Cache-Control', 'private, no-store');
 
-  const redis = createRedis();
+  const apiKey = process.env.DUNE_API_KEY;
+  if (!apiKey) {
+    res.status(503).json({
+      error: 'Server missing DUNE_API_KEY',
+      rows: [],
+    });
+    return;
+  }
 
   try {
-    if (redis) {
-      const cached = await readCache(redis);
-      if (cached?.rows?.length) {
-        res.status(200).json({
-          rows: cached.rows,
-          updatedAt: cached.updatedAt,
-        });
-        return;
-      }
-    }
-
-    const apiKey = process.env.DUNE_API_KEY;
-    if (!apiKey) {
-      res.status(503).json({
-        error: 'Server missing DUNE_API_KEY',
-        rows: [],
-      });
-      return;
-    }
-
     const rows = await pullDuneRows(apiKey);
-    if (redis) {
-      await writeCache(redis, rows);
-    }
-
     res.status(200).json({
       rows,
       updatedAt: String(Date.now()),
-      fromLive: true,
     });
   } catch (e) {
     console.error(e);
