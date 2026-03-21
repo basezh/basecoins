@@ -386,7 +386,9 @@
   }
 
   .name{
-    display:inline-block;
+    flex:1 1 0;
+    min-width:0;
+    display:block;
     max-width:100%;
     white-space:nowrap;
     overflow:hidden;
@@ -736,7 +738,6 @@
     .age,
     .volume,
     .fdv{font-size:10px}
-    .name{display:none}
     .footer-links{font-size:10px}
   }
 </style>
@@ -764,23 +765,23 @@
         <span class="chip-label">all</span>
       </div>
       <div class="chip" data-cat="virtual">
-        <img class="chip-icon" src="https://pbs.twimg.com/profile_images/2009228951621914626/U6ZpmYq3_400x400.jpg" alt="virtual">
+        <img class="chip-icon" src="/images/virtual.jpg" alt="virtual">
         <span class="chip-label">virtual</span>
       </div>
       <div class="chip" data-cat="clanker">
-        <img class="chip-icon" src="https://pbs.twimg.com/profile_images/1953706842032324608/Arf6RRS3_400x400.jpg" alt="clanker">
+        <img class="chip-icon" src="/images/clanker.jpg" alt="clanker">
         <span class="chip-label">clanker</span>
       </div>
       <div class="chip" data-cat="doppler">
-        <img class="chip-icon" src="https://pbs.twimg.com/profile_images/1989072411757568001/hKlsQbpS_400x400.jpg" alt="doppler">
+        <img class="chip-icon" src="/images/doppler.jpg" alt="doppler">
         <span class="chip-label">doppler</span>
       </div>
       <div class="chip" data-cat="aerodrome">
-        <img class="chip-icon" src="https://pbs.twimg.com/profile_images/1691174347388399617/AnNwWdzS_400x400.jpg" alt="aerodrome">
+        <img class="chip-icon" src="/images/aerodrome.jpg" alt="aerodrome">
         <span class="chip-label">aerodrome</span>
       </div>
       <div class="chip" data-cat="flaunch">
-        <img class="chip-icon" src="https://pbs.twimg.com/profile_images/1966758436588126208/3Bb938ZU_400x400.jpg" alt="flaunch">
+        <img class="chip-icon" src="/images/flaunch.jpg" alt="flaunch">
         <span class="chip-label">flaunch</span>
       </div>
     </div>
@@ -965,11 +966,11 @@
   }
 
   const ICONS={
-    clanker:"https://pbs.twimg.com/profile_images/1953706842032324608/Arf6RRS3_400x400.jpg",
-    doppler:"https://pbs.twimg.com/profile_images/1989072411757568001/hKlsQbpS_400x400.jpg",
-    virtual:"https://pbs.twimg.com/profile_images/2009228951621914626/U6ZpmYq3_400x400.jpg",
-    aerodrome:"https://pbs.twimg.com/profile_images/1691174347388399617/AnNwWdzS_400x400.jpg",
-    flaunch:"https://pbs.twimg.com/profile_images/1966758436588126208/3Bb938ZU_400x400.jpg"
+    clanker:"/images/clanker.jpg",
+    doppler:"/images/doppler.jpg",
+    virtual:"/images/virtual.jpg",
+    aerodrome:"/images/aerodrome.jpg",
+    flaunch:"/images/flaunch.jpg"
   };
 
   const WINDOWS = ['1h','6h','24h'];
