@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>FDV 占比 — basecoin.best</title>
+<link rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🟦</text></svg>">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<style>
+  :root{
+    --blue:#0000ff;
+    --green:#66c800;
+    --red:#fc401f;
+    --bg:#0a0b0d;
+    --panel:#0f1115;
+    --panel-accent:#121419;
+    --border:#1d2026;
+    --text:#e9edf2;
+    --text-weak:#cfd6de;
+    --muted:#aeb6c2;
+    --btn-bg:#121419;
+    --btn-br:#2a2f38;
+    --btn-hover:#171c23;
+    --btn-active:#0a0b0d;
+    --focus:#0000ff;
+    --logo-color:#ffffff;
+    --footer-link:#8B919E;
+    --page-side-padding:35px;
+    --page-top-padding:20px;
+    --footer-bottom-gap:18px;
+    --panel-footer-gap:18px;
+  }
+  .theme-light{
+    --bg:#ffffff;
+    --panel:#f7f9fb;
+    --panel-accent:#eef2f7;
+    --border:#e4e9f1;
+    --text:#12203a;
+    --text-weak:#2a3b57;
+    --muted:#5a6e93;
+    --btn-bg:#f3f6fb;
+    --btn-br:#dfe7f3;
+    --btn-hover:#e9eef7;
+    --btn-active:#e0e6f2;
+    --logo-color:#0000ff;
+    --footer-link:#727887;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    max-width:1200px;
+    min-height:100vh;
+    margin:0 auto;
+    padding:var(--page-top-padding) var(--page-side-padding) var(--footer-bottom-gap);
+    display:flex;
+    flex-direction:column;
+  }
+  .header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    margin-bottom:16px;
+  }
+  .header-left{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    min-width:0;
+    flex-wrap:wrap;
+  }
+  .back-link{
+    font-size:14px;
+    font-weight:600;
+    color:#3b63ff;
+    text-decoration:none;
+    white-space:nowrap;
+  }
+  .back-link:hover{text-decoration:underline}
+  .page-title{
+    font-size:20px;
+    font-weight:700;
+    letter-spacing:.2px;
+  }
+  .switch{
+    position:relative;
+    width:44px;
+    height:24px;
+    border-radius:999px;
+    background:var(--btn-bg);
+    border:1px solid var(--btn-br);
+    cursor:pointer;
+    transition:background .15s,border-color .15s;
+    flex-shrink:0;
+  }
+  .switch:hover{background:var(--btn-hover)}
+  .knob{
+    position:absolute;
+    top:2px;
+    left:2px;
+    width:20px;
+    height:20px;
+    border-radius:50%;
+    background:#fff;
+    transition:left .18s;
+    box-shadow:0 1px 2px rgba(0,0,0,.15);
+  }
+  .switch[aria-checked="true"] .knob{left:22px}
+  .topbar{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    margin-bottom:12px;
+  }
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    padding:6px 14px;
+    min-height:40px;
+    border-radius:10px;
+    border:1.5px solid transparent;
+    background:var(--btn-bg);
+    color:var(--muted);
+    font-size:14px;
+    font-weight:500;
+    cursor:pointer;
+    transition:all .2s;
+    user-select:none;
+    white-space:nowrap;
+  }
+  .chip:hover{background:var(--btn-hover)}
+  .chip.active{
+    background:var(--bg);
+    border-color:#3b63ff;
+    color:var(--text);
+  }
+  .chip-icon{
+    width:16px;
+    height:16px;
+    border-radius:5px;
+    object-fit:cover;
+    display:none;
+  }
+  .chip:not([data-cat="all"]) .chip-icon{display:block}
+  .chip-label{display:inline-block;line-height:1}
+  .cycle-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:58px;
+    min-height:40px;
+    padding:6px 14px;
+    border-radius:10px;
+    border:1.5px solid #3b63ff;
+    background:var(--bg);
+    color:var(--text);
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    user-select:none;
+  }
+  .cycle-btn:hover{background:var(--btn-hover)}
+  .panel{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:12px;
+    overflow:hidden;
+    margin-bottom:var(--panel-footer-gap);
+  }
+  .treemap-wrap{
+    flex:1;
+    min-height:280px;
+    position:relative;
+    padding:4px;
+  }
+  .treemap-canvas{
+    position:absolute;
+    inset:4px;
+  }
+  .treemap-cell{
+    position:absolute;
+    overflow:hidden;
+    border-radius:6px;
+    border:1px solid rgba(0,0,0,.35);
+    text-decoration:none;
+    color:#fff;
+    display:flex;
+    flex-direction:column;
+    box-sizing:border-box;
+    padding:6px;
+    text-shadow:0 1px 3px rgba(0,0,0,.85);
+    transition:filter .12s, box-shadow .12s;
+  }
+  .theme-light .treemap-cell{
+    border-color:rgba(0,0,0,.12);
+    text-shadow:0 1px 2px rgba(0,0,0,.55);
+  }
+  .treemap-cell:hover{
+    filter:brightness(1.07);
+    z-index:5;
+    box-shadow:0 0 0 2px rgba(59,99,255,.55);
+  }
+  .tm-row{display:flex;align-items:center;gap:6px;min-width:0}
+  .tm-logo{
+    width:22px;
+    height:22px;
+    border-radius:6px;
+    object-fit:cover;
+    border:1px solid rgba(255,255,255,.25);
+    flex-shrink:0;
+  }
+  .tm-head{min-width:0;flex:1}
+  .tm-ticker{
+    font-weight:700;
+    line-height:1.1;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .tm-name{
+    opacity:.92;
+    line-height:1.15;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .tm-meta{
+    margin-top:auto;
+    display:flex;
+    flex-direction:column;
+    gap:1px;
+    line-height:1.2;
+    opacity:.95;
+  }
+  .tm-line{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tm-chg-up{color:#b8ff7a}
+  .tm-chg-down{color:#ffb4a8}
+  .tm-chg-flat{color:#e8e8ee}
+  .status-msg{padding:24px;color:var(--muted);text-align:center;font-size:15px}
+  .status-msg.err{color:var(--red)}
+  .footer{
+    text-align:center;
+    font-size:11px;
+    color:var(--footer-link);
+  }
+  .footer a{color:var(--footer-link);text-decoration:none}
+  .footer a:hover{color:#3b63ff}
+  @media (max-width:720px){
+    #winChips{display:none}
+    #mobileWinCycle{display:inline-flex}
+  }
+  @media (min-width:721px){
+    #mobileWinCycle{display:none}
+  }
+  @media (max-width:420px){
+    :root{--page-side-padding:10px;--page-top-padding:10px}
+    .page-title{font-size:16px}
+    #catChips .chip{width:36px;min-width:36px;min-height:36px;padding:0 8px}
+    #catChips .chip .chip-icon{width:18px;height:18px}
+    #catChips .chip[data-cat="all"]{min-width:40px}
+    #catChips .chip:not([data-cat="all"]) .chip-label{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="header-left">
+      <a class="back-link" href="/">← 返回 Trending</a>
+      <span class="page-title">FDV 市值占比</span>
+    </div>
+    <button id="themeSwitch" class="switch" type="button" role="switch" aria-checked="false" aria-label="切换主题">
+      <span class="knob"></span>
+    </button>
+  </div>
+
+  <div class="topbar">
+    <div class="chips" id="catChips">
+      <div class="chip active" data-cat="all"><span class="chip-label">all</span></div>
+      <div class="chip" data-cat="virtual">
+        <img class="chip-icon" src="/images/virtual.jpg" alt="">
+        <span class="chip-label">virtual</span>
+      </div>
+      <div class="chip" data-cat="clanker">
+        <img class="chip-icon" src="/images/clanker.jpg" alt="">
+        <span class="chip-label">clanker</span>
+      </div>
+      <div class="chip" data-cat="doppler">
+        <img class="chip-icon" src="/images/doppler.jpg" alt="">
+        <span class="chip-label">doppler</span>
+      </div>
+      <div class="chip" data-cat="aerodrome">
+        <img class="chip-icon" src="/images/aerodrome.jpg" alt="">
+        <span class="chip-label">aerodrome</span>
+      </div>
+      <div class="chip" data-cat="flaunch">
+        <img class="chip-icon" src="/images/flaunch.jpg" alt="">
+        <span class="chip-label">flaunch</span>
+      </div>
+    </div>
+    <div class="chips" id="winChips">
+      <div class="chip" data-win="1h">1h</div>
+      <div class="chip" data-win="6h">6h</div>
+      <div class="chip active" data-win="24h">24h</div>
+    </div>
+    <button class="cycle-btn" id="mobileWinCycle" type="button" aria-label="切换周期">24h</button>
+  </div>
+
+  <div class="panel" id="panel">
+    <div class="treemap-wrap" id="treemapWrap">
+      <div class="treemap-canvas" id="treemapCanvas"></div>
+      <div class="status-msg" id="statusMsg" style="display:none"></div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    方块面积 ∝ FDV · 颜色 ∝ 涨跌 · 点击跳转 Dexscreener
+  </footer>
+</div>
+
+<script>
+  const themeSwitch=document.getElementById('themeSwitch');
+  function applyTheme(mode){
+    if(mode==='light'){
+      document.documentElement.classList.add('theme-light');
+      themeSwitch.setAttribute('aria-checked','true');
+    }else{
+      document.documentElement.classList.remove('theme-light');
+      themeSwitch.setAttribute('aria-checked','false');
+    }
+    localStorage.setItem('theme-mode',mode);
+  }
+  themeSwitch.addEventListener('click',()=>{
+    const isLight=document.documentElement.classList.toggle('theme-light');
+    applyTheme(isLight?'light':'dark');
+    layoutTreemap();
+  });
+  (function(){
+    const saved=localStorage.getItem('theme-mode');
+    applyTheme(saved==='light'?'light':'dark');
+  })();
+
+  const ICONS={
+    clanker:"/images/clanker.jpg",
+    doppler:"/images/doppler.jpg",
+    virtual:"/images/virtual.jpg",
+    aerodrome:"/images/aerodrome.jpg",
+    flaunch:"/images/flaunch.jpg"
+  };
+  const WINDOWS=['1h','6h','24h'];
+  const PLACEHOLDER_IMG="data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"40\"><rect width=\"40\" height=\"40\" fill=\"%23cccccc\"/><text x=\"50%\" y=\"55%\" text-anchor=\"middle\" font-size=\"25\" font-weight=\"600\" dy=\".3em\" fill=\"%23000\">?</text></svg>";
+
+  const state={category:'all',window:'24h',rows:[]};
+
+  const fmtUSD=(n)=> (n==null||isNaN(n)) ? '—'
+    : (Math.abs(n)>=1e9?`$${(n/1e9).toFixed(1)}B`
+    : Math.abs(n)>=1e6?`$${(n/1e6).toFixed(1)}M`
+    : Math.abs(n)>=1e3?`$${(n/1e3).toFixed(1)}K`
+    : `$${Number(n).toFixed(2)}`);
+
+  function fmtPrice(n){
+    if(n==null || isNaN(n)) return '—';
+    const v=Number(n);
+    if (v>=1000) return `$${v.toFixed(0)}`;
+    if (v>=1) return `$${v.toFixed(2)}`;
+    if (v>=0.01) return `$${v.toFixed(4)}`;
+    return `$${v.toFixed(8)}`;
+  }
+
+  function dexUrl(r){
+    if(r.dex?.url) return r.dex.url;
+    if(r.address) return `https://dexscreener.com/base/${r.address}`;
+    return '#';
+  }
+
+  const chooseBestPair=(pairs=[])=>{
+    if(!pairs.length) return null;
+    const basePairs=pairs.filter(pair=>{
+      const url=pair.url||'';
+      return (url.split('/')[3]||'').toLowerCase()==='base';
+    });
+    const pool=basePairs.length?basePairs:pairs;
+    return [...pool].sort((a,b)=>{
+      const la=a.liquidity?.usd??0, lb=b.liquidity?.usd??0;
+      if(lb!==la) return lb-la;
+      return (b.volume?.h24??0)-(a.volume?.h24??0);
+    })[0];
+  };
+
+  async function fetchDex(address){
+    const res=await fetch(`https://api.dexscreener.com/latest/dex/tokens/${address}`);
+    if(!res.ok) return null;
+    const data=await res.json();
+    const p=chooseBestPair(data?.pairs);
+    if(!p) return null;
+    const url=p.url||'';
+    if((url.split('/')[3]||'').toLowerCase()!=='base') return null;
+    return {
+      url,
+      image:p.info?.imageUrl||'',
+      price:Number(p.priceUsd)||null,
+      chg1h:p.priceChange?.h1??null,
+      chg6h:p.priceChange?.h6??null,
+      chg24h:p.priceChange?.h24??null,
+      vol1h:p.volume?.h1??null,
+      vol6h:p.volume?.h6??null,
+      vol24h:p.volume?.h24??null,
+      fdv:p.fdv??null,
+      baseSymbol:p.baseToken?.symbol||''
+    };
+  }
+
+  async function fetchDune(){
+    const res=await fetch('/api/dune-data');
+    if(!res.ok){
+      let msg='数据请求失败';
+      try{ const j=await res.json(); if(j.error) msg=j.error; }catch{}
+      throw new Error(msg);
+    }
+    const data=await res.json();
+    const rows=data.rows;
+    if(!Array.isArray(rows)||!rows.length) throw new Error(data.error||'暂无数据');
+    return rows;
+  }
+
+  function mapRowForWin(r,win){
+    const price=r.dex?.price??null;
+    const change=win==='1h'?r.dex?.chg1h:(win==='6h'?r.dex?.chg6h:r.dex?.chg24h);
+    const volume=win==='1h'?r.dex?.vol1h:(win==='6h'?r.dex?.vol6h:r.dex?.vol24h);
+    const fdv=r.dex?.fdv??null;
+    return {...r,_price:price,_change:change,_volume:volume??0,_fdv:fdv};
+  }
+
+  function rowsForTreemap(){
+    const filtered=state.rows.filter(r=>state.category==='all'?true:r.source===state.category);
+    return filtered.map(r=>mapRowForWin(r,state.window)).filter(r=>r._fdv!=null && r._fdv>0);
+  }
+
+  function heatColor(pct){
+    if(pct==null||isNaN(pct)) return 'rgb(72,74,82)';
+    const p=Math.max(-20,Math.min(20,pct))/20;
+    if(p>=0){
+      const t=p;
+      const r=Math.round(18+25*(1-t));
+      const g=Math.round(95+75*t);
+      const b=Math.round(32+28*t);
+      return `rgb(${r},${g},${b})`;
+    }
+    const t=-p;
+    const r=Math.round(180+60*t);
+    const g=Math.round(45-25*t);
+    const b=Math.round(38-18*t);
+    return `rgb(${Math.min(255,r)},${Math.max(18,g)},${Math.max(22,b)})`;
+  }
+
+  function chgClass(c){
+    if(c==null||isNaN(c)) return 'tm-chg-flat';
+    return c>=0?'tm-chg-up':'tm-chg-down';
+  }
+
+  function fmtChg(c){
+    if(c==null||isNaN(c)) return '—';
+    return `${c>0?'+':''}${Number(c).toFixed(2)}%`;
+  }
+
+  function syncWindowUI(){
+    document.querySelectorAll('#winChips .chip').forEach(chip=>{
+      chip.classList.toggle('active',chip.dataset.win===state.window);
+    });
+    const mb=document.getElementById('mobileWinCycle');
+    if(mb) mb.textContent=state.window;
+  }
+
+  function showStatus(text,isErr){
+    const el=document.getElementById('statusMsg');
+    const canvas=document.getElementById('treemapCanvas');
+    if(!text){
+      el.style.display='none';
+      el.textContent='';
+      canvas.style.display='';
+      return;
+    }
+    el.style.display='block';
+    el.textContent=text;
+    el.className='status-msg'+(isErr?' err':'');
+    canvas.style.display='none';
+  }
+
+  let layoutRaf=null;
+  function layoutTreemap(){
+    if(layoutRaf) cancelAnimationFrame(layoutRaf);
+    layoutRaf=requestAnimationFrame(()=>{
+      layoutRaf=null;
+      _layoutTreemap();
+    });
+  }
+
+  function _layoutTreemap(){
+    const canvas=document.getElementById('treemapCanvas');
+    const wrap=document.getElementById('treemapWrap');
+    if(!canvas||!wrap) return;
+    const items=rowsForTreemap();
+    canvas.innerHTML='';
+
+    if(!state.rows.length){
+      showStatus('加载中…',false);
+      return;
+    }
+    if(!items.length){
+      showStatus('当前分类下没有有效 FDV 数据，无法绘制占比图。',false);
+      return;
+    }
+    showStatus('',false);
+
+    const w=Math.max(200,wrap.clientWidth-8);
+    const h=Math.max(260,Math.floor(wrap.clientHeight-8));
+    canvas.style.width=w+'px';
+    canvas.style.height=h+'px';
+
+    const wrapped=items.map(r=>({row:r}));
+    const root=d3.hierarchy({children:wrapped},d=>d.children)
+      .sum(d=>(d.row?Math.max(0,d.row._fdv||0):0))
+      .sort((a,b)=>(b.value||0)-(a.value||0));
+
+    d3.treemap()
+      .tile(d3.treemapSquarify)
+      .size([w,h])
+      .paddingOuter(2)
+      .paddingInner(2)
+      .round(true)
+      (root);
+
+    const leaves=root.leaves();
+    const total=root.value||1;
+
+    for(const leaf of leaves){
+      const r=leaf.data.row;
+      if(!r) continue;
+      const x0=leaf.x0,y0=leaf.y0,x1=leaf.x1,y1=leaf.y1;
+      const cw=x1-x0,ch=y1-y0;
+      const minSide=Math.min(cw,ch);
+      const area=Math.max(1,cw*ch);
+      const baseFs=Math.max(7,Math.min(15,Math.sqrt(area)/9));
+
+      const a=document.createElement('a');
+      a.className='treemap-cell';
+      a.href=dexUrl(r);
+      a.target='_blank';
+      a.rel='noopener noreferrer';
+      a.style.left=x0+'px';
+      a.style.top=y0+'px';
+      a.style.width=cw+'px';
+      a.style.height=ch+'px';
+      a.style.background=heatColor(r._change);
+      a.style.fontSize=baseFs+'px';
+
+      const ticker=(r.dex?.baseSymbol||r.symbol||'—').replace(/</g,'');
+      const fullName=(r.name||'').replace(/</g,'');
+      const shortName=fullName.length>28?fullName.slice(0,28)+'…':fullName;
+      const img=r.dex?.image||PLACEHOLDER_IMG;
+
+      if(minSide>=88){
+        a.innerHTML=`
+          <div class="tm-row">
+            <img class="tm-logo" src="${img}" alt="" width="22" height="22"
+                 style="width:${Math.min(28,Math.max(18,minSide/4))}px;height:${Math.min(28,Math.max(18,minSide/4))}px"
+                 onerror="this.onerror=null;this.src='${PLACEHOLDER_IMG}'">
+            <div class="tm-head">
+              <div class="tm-ticker" style="font-size:${baseFs+3}px">${ticker}</div>
+              <div class="tm-name" style="font-size:${Math.max(7,baseFs-1)}px">${shortName||'—'}</div>
+            </div>
+          </div>
+          <div class="tm-meta" style="font-size:${Math.max(7,baseFs-1)}px">
+            <div class="tm-line">${fmtPrice(r._price)} · <span class="${chgClass(r._change)}">${fmtChg(r._change)}</span></div>
+            <div class="tm-line">FDV ${fmtUSD(r._fdv)} · Vol ${fmtUSD(r._volume)}</div>
+            <div class="tm-line" style="opacity:.85">${((r._fdv/total)*100).toFixed(1)}% of view</div>
+          </div>`;
+      }else if(minSide>=52){
+        a.innerHTML=`
+          <div class="tm-row">
+            <img class="tm-logo" src="${img}" alt="" style="width:${Math.max(14,minSide/3.5)}px;height:${Math.max(14,minSide/3.5)}px"
+                 onerror="this.onerror=null;this.src='${PLACEHOLDER_IMG}'">
+            <div class="tm-head">
+              <div class="tm-ticker" style="font-size:${baseFs+2}px">${ticker}</div>
+            </div>
+          </div>
+          <div class="tm-meta" style="font-size:${Math.max(7,baseFs-1)}px;margin-top:4px">
+            <div class="tm-line"><span class="${chgClass(r._change)}">${fmtChg(r._change)}</span></div>
+            <div class="tm-line">${fmtUSD(r._fdv)}</div>
+          </div>`;
+      }else if(minSide>=34){
+        a.innerHTML=`<div class="tm-ticker" style="font-size:${baseFs+1}px">${ticker}</div>
+          <div class="tm-line ${chgClass(r._change)}" style="font-size:${baseFs}px;margin-top:2px">${fmtChg(r._change)}</div>`;
+      }else{
+        a.innerHTML=`<div class="tm-ticker" style="font-size:${Math.max(7,baseFs)}px">${ticker}</div>`;
+      }
+
+      canvas.appendChild(a);
+    }
+  }
+
+  document.getElementById('catChips').addEventListener('click',e=>{
+    const c=e.target.closest('.chip');
+    if(!c) return;
+    [...e.currentTarget.children].forEach(x=>x.classList.remove('active'));
+    c.classList.add('active');
+    state.category=c.dataset.cat;
+    layoutTreemap();
+  });
+
+  document.getElementById('winChips').addEventListener('click',e=>{
+    const c=e.target.closest('.chip');
+    if(!c) return;
+    state.window=c.dataset.win;
+    syncWindowUI();
+    layoutTreemap();
+  });
+
+  document.getElementById('mobileWinCycle').addEventListener('click',()=>{
+    const idx=WINDOWS.indexOf(state.window);
+    state.window=WINDOWS[(idx+1)%WINDOWS.length];
+    syncWindowUI();
+    layoutTreemap();
+  });
+
+  window.addEventListener('resize',layoutTreemap);
+  if(window.ResizeObserver){
+    new ResizeObserver(()=>layoutTreemap()).observe(document.getElementById('treemapWrap'));
+  }
+
+  let dexTimer=null;
+  function scheduleLayout(){
+    if(dexTimer) clearTimeout(dexTimer);
+    dexTimer=setTimeout(()=>{dexTimer=null;layoutTreemap();},120);
+  }
+
+  (async function init(){
+    try{
+      syncWindowUI();
+      showStatus('加载中…',false);
+      const duneRows=await fetchDune();
+      const concurrency=8,out=[]; let i=0;
+      async function worker(){
+        while(i<duneRows.length){
+          const idx=i++;
+          const r=duneRows[idx];
+          try{
+            out[idx]={...r,dex:await fetchDex(r.address)};
+          }catch{
+            out[idx]={...r,dex:null};
+          }
+          state.rows=out.filter(Boolean);
+          scheduleLayout();
+        }
+      }
+      await Promise.all(Array.from({length:concurrency},worker));
+      state.rows=out.filter(Boolean);
+      showStatus('',false);
+      layoutTreemap();
+    }catch(e){
+      console.error(e);
+      showStatus('加载失败：'+e.message,true);
+    }
+  })();
+</script>
+</body>
+</html>
