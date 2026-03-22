@@ -1303,17 +1303,20 @@
   }
 
   function treemapTypeScale(minSide,area){
-    const geom=Math.min(minSide/68,Math.sqrt(Math.max(1,area))/50,1);
-    const shrink=Math.max(0.36,geom);
-    const rawBase=Math.sqrt(Math.max(1,area))/4.6;
-    const baseFs=Math.max(6,Math.min(24,rawBase*shrink));
-    const fsTicker=Math.round(Math.min(26,Math.max(7,baseFs*1.16)));
-    const fsName=Math.round(Math.max(6,Math.min(fsTicker-1,baseFs*0.58)));
-    const fsPrice=Math.round(Math.max(6,Math.min(fsTicker,baseFs*0.72)));
-    const logoPx=Math.round(Math.min(54,Math.max(14,minSide*0.3*Math.max(0.55,shrink))));
-    const showLogo=minSide>=42&&area>=2000&&shrink>=0.5;
-    const showName=minSide>=24;
-    const showSub=minSide>=56&&area>=2800;
+    const edge=Math.max(1,minSide);
+    const s=Math.sqrt(Math.max(1,area));
+    const blend=Math.min(edge*0.27,s/4.55);
+    const maxTk=Math.min(25,edge*0.25);
+    const maxNm=Math.min(15,edge*0.152);
+    const maxPr=Math.min(17,edge*0.168);
+    const fsTicker=Math.round(Math.max(5,Math.min(maxTk,blend*1.06)));
+    const fsName=Math.round(Math.max(5,Math.min(maxNm,blend*0.54)));
+    const fsPrice=Math.round(Math.max(5,Math.min(maxPr,blend*0.68)));
+    const shrink=Math.min(edge/72,s/50,1);
+    const logoPx=Math.round(Math.min(54,Math.max(14,edge*0.3*Math.min(1,s/48))));
+    const showLogo=edge>=42&&area>=2000&&shrink>=0.48;
+    const showName=edge>=24;
+    const showSub=edge>=56&&area>=2800;
     return{fsTicker,fsName,fsPrice,logoPx,showLogo,showName,showSub,shrink};
   }
 
@@ -1378,8 +1381,8 @@
         div.style.background=heatColor(d.chg);
         if(minSide>=22){
           const subLine=ty.showSub
-            ? `<div class="tm-sub" style="font-size:${Math.max(7,Math.round(ty.fsName*0.9))}px">${escHtml(`FDV ${fmtUSD(d.fdv)} · Vol ${fmtUSD(d.vol)}`)}</div>`
-            : (minSide>=40 ? `<div class="tm-sub" style="font-size:${Math.max(7,Math.round(ty.fsName*0.88))}px">${escHtml(fmtUSD(d.fdv))}</div>` : '');
+            ? `<div class="tm-sub" style="font-size:${Math.max(5,Math.round(ty.fsName*0.9))}px">${escHtml(`FDV ${fmtUSD(d.fdv)} · Vol ${fmtUSD(d.vol)}`)}</div>`
+            : (minSide>=40 ? `<div class="tm-sub" style="font-size:${Math.max(5,Math.round(ty.fsName*0.88))}px">${escHtml(fmtUSD(d.fdv))}</div>` : '');
           div.innerHTML=`<div class="tm-stack">
               <div class="tm-ticker-side" style="font-size:${ty.fsTicker}px">${escHtml('其他')}</div>
               ${minSide>=30?`<div class="tm-name-side" style="font-size:${ty.fsName}px">${escHtml(`${d.count} 个代币`)}</div>`:''}
@@ -1387,7 +1390,7 @@
               ${subLine}
             </div>`;
         }else{
-          div.innerHTML=`<div class="tm-stack"><div class="tm-ticker-side" style="font-size:${Math.max(6,Math.round(minSide*0.4))}px">${escHtml('其他')}</div></div>`;
+          div.innerHTML=`<div class="tm-stack"><div class="tm-ticker-side" style="font-size:${ty.fsTicker}px">${escHtml('其他')}</div></div>`;
         }
         canvas.appendChild(div);
         continue;
@@ -1413,7 +1416,7 @@
       a.title=fullName||undefined;
 
       if(minSide<18){
-        a.innerHTML=`<div class="tm-stack"><div class="tm-ticker-side" style="font-size:${Math.max(6,Math.round(minSide*0.42))}px">${ticker}</div></div>`;
+        a.innerHTML=`<div class="tm-stack"><div class="tm-ticker-side" style="font-size:${ty.fsTicker}px">${ticker}</div></div>`;
         canvas.appendChild(a);
         continue;
       }
@@ -1429,7 +1432,7 @@
       topInner+='</div>';
 
       const subLine=ty.showSub
-        ? `<div class="tm-sub" style="font-size:${Math.max(7,Math.round(ty.fsName*0.88))}px">${escHtml(`FDV ${fmtUSD(r._fdv)} · Vol ${fmtUSD(r._volume)}`)}</div>`
+        ? `<div class="tm-sub" style="font-size:${Math.max(5,Math.round(ty.fsName*0.88))}px">${escHtml(`FDV ${fmtUSD(r._fdv)} · Vol ${fmtUSD(r._volume)}`)}</div>`
         : '';
 
       a.innerHTML=`<div class="tm-stack">
