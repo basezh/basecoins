@@ -598,24 +598,46 @@
   }
   .tm-pricechg{
     display:flex;
-    flex-wrap:wrap;
+    flex-direction:column;
     align-items:center;
     justify-content:center;
-    gap:0.35em;
+    gap:0.12em;
     font-weight:600;
-    line-height:1.2;
+    line-height:1.22;
     max-width:100%;
+    min-width:0;
+    width:100%;
   }
-  .tm-sub{
+  .tm-price-line,
+  .tm-chg-line{
+    max-width:100%;
+    min-width:0;
+    width:100%;
+    text-align:center;
+    word-break:break-word;
+    overflow-wrap:anywhere;
+  }
+  .tm-subwrap{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:0.1em;
+    max-width:100%;
+    min-width:0;
+    width:100%;
     margin-top:0.08em;
     opacity:.82;
     font-weight:500;
-    line-height:1.2;
-    max-width:100%;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    white-space:nowrap;
+    line-height:1.22;
     text-align:center;
+  }
+  .tm-sub-line{
+    max-width:100%;
+    min-width:0;
+    width:100%;
+    word-break:break-word;
+    overflow-wrap:anywhere;
   }
   .tm-chg-up{color:#b8ff7a}
   .tm-chg-down{color:#ffb4a8}
@@ -1312,7 +1334,17 @@
     });
   }
 
-  function treemapTypeScale(minSide,area){
+  function snapLogoTier(raw,maxCap,tiers){
+    const tList=tiers||[72,64,56,48,42,36,30,26,22,18,16,14];
+    let px=tList[tList.length-1];
+    for(const t of tList){
+      if(t>maxCap) continue;
+      if(raw>=t){px=t;break;}
+    }
+    return Math.max(12,Math.min(maxCap,px));
+  }
+
+  function treemapTypeScale(minSide,area,cw,ch){
     const edge=Math.max(1,minSide);
     const s=Math.sqrt(Math.max(1,area));
     const blend=Math.min(edge*0.27,s/4.55);
@@ -1323,11 +1355,19 @@
     const fsName=Math.round(Math.max(5,Math.min(maxNm,blend*0.54)));
     const fsPrice=Math.round(Math.max(5,Math.min(maxPr,blend*0.68)));
     const shrink=Math.min(edge/72,s/50,1);
-    const logoPx=Math.round(Math.min(54,Math.max(14,edge*0.3*Math.min(1,s/48))));
+    const tallCell=ch>cw;
+    let logoPx;
+    if(tallCell){
+      const raw=Math.min(cw*0.86,ch*0.46);
+      logoPx=snapLogoTier(raw,76,[72,64,56,50,44,38,32,28,24,20,18,16,14]);
+    }else{
+      const raw=Math.min(cw*0.36,ch*0.52,edge*0.34*Math.min(1,s/50));
+      logoPx=snapLogoTier(raw,56,[52,46,40,34,28,24,20,18,16,14]);
+    }
     const showLogo=edge>=42&&area>=2000&&shrink>=0.48;
     const showName=edge>=24;
     const showSub=edge>=56&&area>=2800;
-    return{fsTicker,fsName,fsPrice,logoPx,showLogo,showName,showSub,shrink};
+    return{fsTicker,fsName,fsPrice,logoPx,showLogo,showName,showSub,shrink,tallCell};
   }
 
   function runTreemapLayout(){
@@ -1379,7 +1419,7 @@
       const x0=ly0,y0=lx0,cw=ly1-ly0,ch=lx1-lx0;
       const minSide=Math.min(cw,ch);
       const area=Math.max(1,cw*ch);
-      const ty=treemapTypeScale(minSide,area);
+      const ty=treemapTypeScale(minSide,area,cw,ch);
 
       if(d.type==='o'){
         const div=document.createElement('div');
@@ -1390,13 +1430,19 @@
         div.style.height=ch+'px';
         div.style.background=heatColor(d.chg);
         if(minSide>=22){
+          const subFs=Math.max(5,Math.round(ty.fsName*0.9));
           const subLine=ty.showSub
-            ? `<div class="tm-sub" style="font-size:${Math.max(5,Math.round(ty.fsName*0.9))}px">${escHtml(`FDV ${fmtUSD(d.fdv)} · Vol ${fmtUSD(d.vol)}`)}</div>`
-            : (minSide>=40 ? `<div class="tm-sub" style="font-size:${Math.max(5,Math.round(ty.fsName*0.88))}px">${escHtml(fmtUSD(d.fdv))}</div>` : '');
+            ? `<div class="tm-subwrap" style="font-size:${subFs}px">
+                <div class="tm-sub-line">${escHtml(`FDV ${fmtUSD(d.fdv)}`)}</div>
+                <div class="tm-sub-line">${escHtml(`Vol ${fmtUSD(d.vol)}`)}</div>
+              </div>`
+            : (minSide>=40 ? `<div class="tm-subwrap" style="font-size:${Math.max(5,Math.round(ty.fsName*0.88))}px"><div class="tm-sub-line">${escHtml(fmtUSD(d.fdv))}</div></div>` : '');
           div.innerHTML=`<div class="tm-stack">
               <div class="tm-ticker-side" style="font-size:${ty.fsTicker}px">${escHtml('其他')}</div>
               ${minSide>=30?`<div class="tm-name-side" style="font-size:${ty.fsName}px">${escHtml(`${d.count} 个代币`)}</div>`:''}
-              <div class="tm-pricechg" style="font-size:${ty.fsPrice}px"><span class="${tmChgClass(d.chg)}">${escHtml(fmtTmChg(d.chg))}</span></div>
+              <div class="tm-pricechg" style="font-size:${ty.fsPrice}px">
+                <div class="tm-chg-line ${tmChgClass(d.chg)}">${escHtml(fmtTmChg(d.chg))}</div>
+              </div>
               ${subLine}
             </div>`;
         }else{
@@ -1431,7 +1477,7 @@
         continue;
       }
 
-      const tallCell=ch>cw;
+      const tallCell=ty.tallCell;
       const topClass=[
         'tm-toprow',
         tallCell?'tm-toprow--stack':'',
@@ -1446,13 +1492,20 @@
       topInner+=`<div class="tm-ticker-side" style="font-size:${ty.fsTicker}px">${ticker}</div>`;
       topInner+='</div>';
 
+      const subFs=Math.max(5,Math.round(ty.fsName*0.88));
       const subLine=ty.showSub
-        ? `<div class="tm-sub" style="font-size:${Math.max(5,Math.round(ty.fsName*0.88))}px">${escHtml(`FDV ${fmtUSD(r._fdv)} · Vol ${fmtUSD(r._volume)}`)}</div>`
+        ? `<div class="tm-subwrap" style="font-size:${subFs}px">
+            <div class="tm-sub-line">${escHtml(`FDV ${fmtUSD(r._fdv)}`)}</div>
+            <div class="tm-sub-line">${escHtml(`Vol ${fmtUSD(r._volume)}`)}</div>
+          </div>`
         : '';
 
       a.innerHTML=`<div class="tm-stack">
           <div class="${topClass}">${topInner}</div>
-          <div class="tm-pricechg" style="font-size:${ty.fsPrice}px"><span>${escHtml(fmtPrice(r._price))}</span><span class="${tmChgClass(r._change)}">${escHtml(fmtTmChg(r._change))}</span></div>
+          <div class="tm-pricechg" style="font-size:${ty.fsPrice}px">
+            <div class="tm-price-line">${escHtml(fmtPrice(r._price))}</div>
+            <div class="tm-chg-line ${tmChgClass(r._change)}">${escHtml(fmtTmChg(r._change))}</div>
+          </div>
           ${subLine}
         </div>`;
 
