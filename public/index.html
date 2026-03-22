@@ -598,10 +598,12 @@
   }
   .tm-pricechg{
     display:flex;
-    flex-direction:column;
+    flex-direction:row;
+    flex-wrap:wrap;
     align-items:center;
     justify-content:center;
-    gap:0.12em;
+    align-content:center;
+    gap:0.3em 0.45em;
     font-weight:600;
     line-height:1.22;
     max-width:100%;
@@ -610,19 +612,21 @@
   }
   .tm-price-line,
   .tm-chg-line{
+    flex:0 1 auto;
     max-width:100%;
     min-width:0;
-    width:100%;
     text-align:center;
     word-break:break-word;
     overflow-wrap:anywhere;
   }
   .tm-subwrap{
     display:flex;
-    flex-direction:column;
+    flex-direction:row;
+    flex-wrap:wrap;
     align-items:center;
     justify-content:center;
-    gap:0.1em;
+    align-content:center;
+    gap:0.2em 0.45em;
     max-width:100%;
     min-width:0;
     width:100%;
@@ -633,9 +637,9 @@
     text-align:center;
   }
   .tm-sub-line{
+    flex:0 1 auto;
     max-width:100%;
     min-width:0;
-    width:100%;
     word-break:break-word;
     overflow-wrap:anywhere;
   }
@@ -1334,16 +1338,6 @@
     });
   }
 
-  function snapLogoTier(raw,maxCap,tiers){
-    const tList=tiers||[72,64,56,48,42,36,30,26,22,18,16,14];
-    let px=tList[tList.length-1];
-    for(const t of tList){
-      if(t>maxCap) continue;
-      if(raw>=t){px=t;break;}
-    }
-    return Math.max(12,Math.min(maxCap,px));
-  }
-
   function treemapTypeScale(minSide,area,cw,ch){
     const edge=Math.max(1,minSide);
     const s=Math.sqrt(Math.max(1,area));
@@ -1356,14 +1350,7 @@
     const fsPrice=Math.round(Math.max(5,Math.min(maxPr,blend*0.68)));
     const shrink=Math.min(edge/72,s/50,1);
     const tallCell=ch>cw;
-    let logoPx;
-    if(tallCell){
-      const raw=Math.min(cw*0.86,ch*0.46);
-      logoPx=snapLogoTier(raw,76,[72,64,56,50,44,38,32,28,24,20,18,16,14]);
-    }else{
-      const raw=Math.min(cw*0.36,ch*0.52,edge*0.34*Math.min(1,s/50));
-      logoPx=snapLogoTier(raw,56,[52,46,40,34,28,24,20,18,16,14]);
-    }
+    const logoPx=Math.round(Math.max(14,Math.min(56,s*0.45)));
     const showLogo=edge>=42&&area>=2000&&shrink>=0.48;
     const showName=edge>=24;
     const showSub=edge>=56&&area>=2800;
@@ -1433,15 +1420,15 @@
           const subFs=Math.max(5,Math.round(ty.fsName*0.9));
           const subLine=ty.showSub
             ? `<div class="tm-subwrap" style="font-size:${subFs}px">
-                <div class="tm-sub-line">${escHtml(`FDV ${fmtUSD(d.fdv)}`)}</div>
-                <div class="tm-sub-line">${escHtml(`Vol ${fmtUSD(d.vol)}`)}</div>
+                <span class="tm-sub-line">${escHtml(`FDV ${fmtUSD(d.fdv)}`)}</span>
+                <span class="tm-sub-line">${escHtml(`Vol ${fmtUSD(d.vol)}`)}</span>
               </div>`
-            : (minSide>=40 ? `<div class="tm-subwrap" style="font-size:${Math.max(5,Math.round(ty.fsName*0.88))}px"><div class="tm-sub-line">${escHtml(fmtUSD(d.fdv))}</div></div>` : '');
+            : (minSide>=40 ? `<div class="tm-subwrap" style="font-size:${Math.max(5,Math.round(ty.fsName*0.88))}px"><span class="tm-sub-line">${escHtml(fmtUSD(d.fdv))}</span></div>` : '');
           div.innerHTML=`<div class="tm-stack">
               <div class="tm-ticker-side" style="font-size:${ty.fsTicker}px">${escHtml('其他')}</div>
               ${minSide>=30?`<div class="tm-name-side" style="font-size:${ty.fsName}px">${escHtml(`${d.count} 个代币`)}</div>`:''}
               <div class="tm-pricechg" style="font-size:${ty.fsPrice}px">
-                <div class="tm-chg-line ${tmChgClass(d.chg)}">${escHtml(fmtTmChg(d.chg))}</div>
+                <span class="tm-chg-line ${tmChgClass(d.chg)}">${escHtml(fmtTmChg(d.chg))}</span>
               </div>
               ${subLine}
             </div>`;
@@ -1495,16 +1482,16 @@
       const subFs=Math.max(5,Math.round(ty.fsName*0.88));
       const subLine=ty.showSub
         ? `<div class="tm-subwrap" style="font-size:${subFs}px">
-            <div class="tm-sub-line">${escHtml(`FDV ${fmtUSD(r._fdv)}`)}</div>
-            <div class="tm-sub-line">${escHtml(`Vol ${fmtUSD(r._volume)}`)}</div>
+            <span class="tm-sub-line">${escHtml(`FDV ${fmtUSD(r._fdv)}`)}</span>
+            <span class="tm-sub-line">${escHtml(`Vol ${fmtUSD(r._volume)}`)}</span>
           </div>`
         : '';
 
       a.innerHTML=`<div class="tm-stack">
           <div class="${topClass}">${topInner}</div>
           <div class="tm-pricechg" style="font-size:${ty.fsPrice}px">
-            <div class="tm-price-line">${escHtml(fmtPrice(r._price))}</div>
-            <div class="tm-chg-line ${tmChgClass(r._change)}">${escHtml(fmtTmChg(r._change))}</div>
+            <span class="tm-price-line">${escHtml(fmtPrice(r._price))}</span>
+            <span class="tm-chg-line ${tmChgClass(r._change)}">${escHtml(fmtTmChg(r._change))}</span>
           </div>
           ${subLine}
         </div>`;
