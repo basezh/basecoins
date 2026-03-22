@@ -590,26 +590,24 @@
     line-height:1.18;
     opacity:.95;
     width:100%;
-    white-space:normal;
+    max-width:100%;
+    min-width:0;
+    white-space:nowrap;
     overflow:visible;
-    word-break:break-word;
-    overflow-wrap:anywhere;
-    hyphens:auto;
   }
   .tm-ticker-side{
     font-weight:700;
     line-height:1.12;
     width:100%;
-    white-space:normal;
+    max-width:100%;
+    min-width:0;
+    white-space:nowrap;
     overflow:visible;
-    word-break:break-word;
-    overflow-wrap:anywhere;
-    hyphens:auto;
   }
   .tm-pricechg{
     display:flex;
     flex-direction:row;
-    flex-wrap:wrap;
+    flex-wrap:nowrap;
     align-items:center;
     justify-content:center;
     align-content:center;
@@ -622,17 +620,16 @@
   }
   .tm-price-line,
   .tm-chg-line{
-    flex:0 1 auto;
-    max-width:100%;
+    flex:0 0 auto;
+    max-width:none;
     min-width:0;
     text-align:center;
-    word-break:break-word;
-    overflow-wrap:anywhere;
+    white-space:nowrap;
   }
   .tm-subwrap{
     display:flex;
     flex-direction:row;
-    flex-wrap:wrap;
+    flex-wrap:nowrap;
     align-items:center;
     justify-content:center;
     align-content:center;
@@ -647,11 +644,10 @@
     text-align:center;
   }
   .tm-sub-line{
-    flex:0 1 auto;
-    max-width:100%;
+    flex:0 0 auto;
+    max-width:none;
     min-width:0;
-    word-break:break-word;
-    overflow-wrap:anywhere;
+    white-space:nowrap;
   }
   .tm-chg-up{color:#b8ff7a}
   .tm-chg-down{color:#ffb4a8}
@@ -1338,6 +1334,134 @@
     canvas.style.display='none';
   }
 
+  const TM_TEXT_MIN_SCALE=0.34;
+
+  function fitTreemapTokenCell(a){
+    const textCol=a.querySelector('.tm-textcol');
+    const nameEl=textCol?.querySelector('.tm-name-side');
+    const tickEl=textCol?.querySelector('.tm-ticker-side');
+    const nameFs0=nameEl?parseFloat(nameEl.style.fontSize)||0:0;
+    const tickFs0=tickEl?parseFloat(tickEl.style.fontSize)||0:0;
+    let scale=1;
+    for(let i=0;i<42;i++){
+      if(!textCol) break;
+      const lim=textCol.clientWidth+1;
+      const nw=nameEl?nameEl.scrollWidth:0;
+      const tw=tickEl?tickEl.scrollWidth:0;
+      if(Math.max(nw,tw)<=lim) break;
+      scale*=0.9;
+      if(nameEl) nameEl.style.fontSize=Math.max(3,Math.round(nameFs0*scale*10)/10)+'px';
+      if(tickEl) tickEl.style.fontSize=Math.max(3,Math.round(tickFs0*scale*10)/10)+'px';
+      if(scale<TM_TEXT_MIN_SCALE) break;
+    }
+
+    const priceRow=a.querySelector('.tm-pricechg');
+    if(priceRow){
+      const fs0=parseFloat(priceRow.style.fontSize);
+      if(fs0&&!isNaN(fs0)){
+        let fs=fs0;
+        for(let j=0;j<36;j++){
+          if(priceRow.scrollWidth<=priceRow.clientWidth+1) break;
+          fs=Math.max(3,fs*0.88);
+          priceRow.style.fontSize=fs.toFixed(1)+'px';
+          if(fs<=fs0*TM_TEXT_MIN_SCALE) break;
+        }
+      }
+    }
+
+    const subRow=a.querySelector('.tm-subwrap');
+    if(subRow){
+      const fs0=parseFloat(subRow.style.fontSize);
+      if(fs0&&!isNaN(fs0)){
+        let fs=fs0;
+        for(let j=0;j<36;j++){
+          if(subRow.scrollWidth<=subRow.clientWidth+1) break;
+          fs=Math.max(3,fs*0.88);
+          subRow.style.fontSize=fs.toFixed(1)+'px';
+          if(fs<=fs0*TM_TEXT_MIN_SCALE) break;
+        }
+      }
+    }
+
+    const img=a.querySelector('.tm-logo-side');
+    if(img&&textCol){
+      const th=Math.ceil(textCol.getBoundingClientRect().height);
+      const cw=a.clientWidth;
+      const ch=a.clientHeight;
+      const tall=ch>cw;
+      const cap=Math.floor(Math.min(56,cw*(tall?0.54:0.4),Math.min(cw,ch)*0.45));
+      const side=Math.max(10,Math.min(cap,th));
+      img.style.width=side+'px';
+      img.style.height=side+'px';
+    }
+  }
+
+  function fitTreemapMiniCell(a){
+    const tick=a.querySelector('.tm-stack > .tm-ticker-side');
+    if(!tick) return;
+    const fs0=parseFloat(tick.style.fontSize)||7;
+    let fs=fs0;
+    for(let i=0;i<32;i++){
+      if(tick.scrollWidth<=a.clientWidth-2) break;
+      fs=Math.max(3,fs*0.88);
+      tick.style.fontSize=fs.toFixed(1)+'px';
+      if(fs<=fs0*TM_TEXT_MIN_SCALE) break;
+    }
+  }
+
+  function fitTreemapOtherCell(div){
+    const nameEl=div.querySelector('.tm-name-side');
+    const tickEl=div.querySelector('.tm-ticker-side');
+    const nameFs0=nameEl?parseFloat(nameEl.style.fontSize)||0:0;
+    const tickFs0=tickEl?parseFloat(tickEl.style.fontSize)||0:0;
+    const innerW=div.clientWidth-2;
+    let scale=1;
+    for(let i=0;i<42;i++){
+      const nw=nameEl?nameEl.scrollWidth:0;
+      const tw=tickEl?tickEl.scrollWidth:0;
+      if(Math.max(nw,tw)<=innerW) break;
+      scale*=0.9;
+      if(nameEl) nameEl.style.fontSize=Math.max(3,Math.round(nameFs0*scale*10)/10)+'px';
+      if(tickEl) tickEl.style.fontSize=Math.max(3,Math.round(tickFs0*scale*10)/10)+'px';
+      if(scale<TM_TEXT_MIN_SCALE) break;
+    }
+    const priceRow=div.querySelector('.tm-pricechg');
+    if(priceRow){
+      const fs0=parseFloat(priceRow.style.fontSize);
+      if(fs0&&!isNaN(fs0)){
+        let fs=fs0;
+        for(let j=0;j<36;j++){
+          if(priceRow.scrollWidth<=priceRow.clientWidth+1) break;
+          fs=Math.max(3,fs*0.88);
+          priceRow.style.fontSize=fs.toFixed(1)+'px';
+          if(fs<=fs0*TM_TEXT_MIN_SCALE) break;
+        }
+      }
+    }
+    const subRow=div.querySelector('.tm-subwrap');
+    if(subRow){
+      const fs0=parseFloat(subRow.style.fontSize);
+      if(fs0&&!isNaN(fs0)){
+        let fs=fs0;
+        for(let j=0;j<36;j++){
+          if(subRow.scrollWidth<=subRow.clientWidth+1) break;
+          fs=Math.max(3,fs*0.88);
+          subRow.style.fontSize=fs.toFixed(1)+'px';
+          if(fs<=fs0*TM_TEXT_MIN_SCALE) break;
+        }
+      }
+    }
+  }
+
+  function runTreemapTextFit(canvas){
+    if(!canvas) return;
+    canvas.querySelectorAll('a.treemap-cell').forEach(a=>{
+      if(a.querySelector('.tm-textcol')) fitTreemapTokenCell(a);
+      else fitTreemapMiniCell(a);
+    });
+    canvas.querySelectorAll('.treemap-cell.treemap-other').forEach(fitTreemapOtherCell);
+  }
+
   let treemapLayoutRaf=null;
   function layoutTreemap(){
     if(state.view!=='treemap') return;
@@ -1523,6 +1647,10 @@
 
       canvas.appendChild(a);
     }
+
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>runTreemapTextFit(canvas));
+    });
   }
 
   function applyView(){
