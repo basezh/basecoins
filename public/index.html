@@ -1358,14 +1358,18 @@
     const fsName=Math.round(Math.max(4,Math.min(13,base*0.48,edge*0.13)));
     const fsPrice=Math.round(Math.max(4,Math.min(15,base*0.62,edge*0.15)));
     const shrink=Math.min(edge/74,s/52,1);
-    const logoPx=Math.round(Math.max(10,Math.min(54,
-      s*0.33,
-      edge*0.21,
-      cw*0.32,
-      tallCell?ch*0.18:ch*0.28
-    )));
-    const showLogo=edge>=30&&area>=900&&shrink>=0.4;
     const showName=edge>=20;
+    const gapText=Math.max(1,Math.round(Math.min(fsName,fsTicker)*0.08));
+    const lhName=1.18;
+    const lhTicker=1.12;
+    const textStackH=Math.round((showName?fsName*lhName+gapText:0)+fsTicker*lhTicker);
+    const capCell=Math.floor(Math.min(56,
+      cw*0.44,
+      edge*0.38,
+      tallCell?Math.min(cw*0.55,ch*0.34):ch*0.42
+    ));
+    const logoPx=Math.max(10,Math.min(capCell,textStackH));
+    const showLogo=edge>=30&&area>=900&&shrink>=0.4;
     const showSub=edge>=60&&area>=3000;
     const tight=edge<46;
     return{fsTicker,fsName,fsPrice,logoPx,showLogo,showName,showSub,shrink,tallCell,tight};
