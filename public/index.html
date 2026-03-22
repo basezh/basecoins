@@ -1236,7 +1236,7 @@
       render();
     }
     updateLayout();
-    layoutTreemap();
+    scheduleLayoutTreemapOnResize();
   });
 
   window.addEventListener('load', updateLayout);
@@ -1247,7 +1247,7 @@
     ro.observe(topbarEl);
     ro.observe(footerEl);
     const tw=document.getElementById('treemapWrap');
-    if(tw) new ResizeObserver(()=>layoutTreemap()).observe(tw);
+    if(tw) new ResizeObserver(()=>scheduleLayoutTreemapOnResize()).observe(tw);
   }
 
   const ICONS={
@@ -1486,35 +1486,35 @@
     }
   }
 
-  function syncTreemapLogoToTextColumn(img,textCol,cellEl){
-    if(!img||!textCol) return;
-    const th=Math.ceil(textCol.getBoundingClientRect().height);
+  function syncTreemapLogoSize(img,cellEl){
+    if(!img) return;
     const cw=cellEl.clientWidth;
     const ch=cellEl.clientHeight;
     const tall=ch>cw;
-    const m=Math.min(cw,ch);
-    const compact=m<54;
+    const mRaw=Math.min(cw,ch);
+    const mq=Math.max(6,Math.round(mRaw/6)*6);
+    const u=Math.max(0,Math.min(1,(54-mq)/28));
     const cap=Math.floor(Math.min(56,
-      cw*(tall?(compact?0.60:0.54):(compact?0.48:0.4)),
-      m*(compact?0.52:0.45)));
+      cw*(tall?(0.54+0.06*u):(0.4+0.08*u)),
+      mq*(0.45+0.07*u)));
     const raw=cellEl.getAttribute('data-layout-logo');
     const layoutPx=raw!=null&&raw!==''?parseInt(raw,10):NaN;
-    const floor=(!isNaN(layoutPx)&&layoutPx>0)?layoutPx:10;
-    const target=Math.max(floor,th);
-    const side=Math.max(10,Math.min(cap,target));
+    const base=(!isNaN(layoutPx)&&layoutPx>0)?layoutPx:10;
+    let side=Math.max(10,Math.min(cap,base));
+    side=Math.round(side/2)*2;
     img.style.width=side+'px';
     img.style.height=side+'px';
   }
 
   function fitTreemapTokenCell(a){
+    const img=a.querySelector('.tm-logo-side');
+    if(img) syncTreemapLogoSize(img,a);
     const textCol=a.querySelector('.tm-textcol');
     const nameEl=textCol?.querySelector('.tm-name-side');
     const tickEl=textCol?.querySelector('.tm-ticker-side');
     if(textCol) scaleTreemapNameTickerPair(nameEl,tickEl,textCol.clientWidth+1);
     fitTreemapPriceRow(a.querySelector('.tm-pricechg'));
     fitTreemapSubRow(a.querySelector('.tm-subwrap'));
-    const img=a.querySelector('.tm-logo-side');
-    if(img&&textCol) syncTreemapLogoToTextColumn(img,textCol,a);
   }
 
   function fitTreemapMiniCell(a){
@@ -1555,6 +1555,7 @@
   }
 
   let treemapLayoutRaf=null;
+  let treemapResizeDebounce=null;
   function layoutTreemap(){
     if(state.view!=='treemap') return;
     if(treemapLayoutRaf) cancelAnimationFrame(treemapLayoutRaf);
@@ -1564,36 +1565,53 @@
     });
   }
 
+  function scheduleLayoutTreemapOnResize(){
+    if(state.view!=='treemap') return;
+    if(treemapResizeDebounce) clearTimeout(treemapResizeDebounce);
+    treemapResizeDebounce=setTimeout(()=>{
+      treemapResizeDebounce=null;
+      layoutTreemap();
+    },40);
+  }
+
   function treemapTypeScale(minSide,area,cw,ch){
-    const edge=Math.max(1,minSide);
-    const s=Math.sqrt(Math.max(1,area));
     const tallCell=ch>cw;
-    const compact=edge<54;
-    const k=Math.max(compact?0.44:0.3,Math.min(1,Math.min(edge/84,s/54)));
-    const base=(s/(compact?4.75:5.15))*k;
-    const ft=compact?0.28:0.22;
-    const fn=compact?0.17:0.13;
-    const fp=compact?0.20:0.15;
-    const fsTicker=Math.round(Math.max(4,Math.min(22,base*(compact?1.12:1.05),edge*ft)));
-    const fsName=Math.round(Math.max(4,Math.min(13,base*(compact?0.52:0.48),edge*fn)));
-    const fsPrice=Math.round(Math.max(4,Math.min(15,base*(compact?0.68:0.62),edge*fp)));
+    const edgeRaw=Math.max(1,minSide);
+    const edge=Math.max(6,Math.round(edgeRaw/6)*6);
+    const sRaw=Math.sqrt(Math.max(1,area));
+    const s=Math.max(6,Math.round(sRaw/6)*6);
+    const cwU=Math.max(4,Math.round(cw/4)*4);
+    const chU=Math.max(4,Math.round(ch/4)*4);
+    const u=Math.max(0,Math.min(1,(58-edge)/26));
+    const kLo=0.3+0.14*u;
+    const baseDiv=5.15-0.4*u;
+    const k=Math.max(kLo,Math.min(1,Math.min(edge/84,s/54)));
+    const base=(s/baseDiv)*k;
+    const ft=0.22+0.06*u;
+    const fn=0.13+0.04*u;
+    const fp=0.15+0.05*u;
+    const fsMul=1.05+0.07*u;
+    const fsTicker=Math.round(Math.max(4,Math.min(22,base*fsMul,edge*ft)));
+    const fsName=Math.round(Math.max(4,Math.min(13,base*(0.48+0.04*u),edge*fn)));
+    const fsPrice=Math.round(Math.max(4,Math.min(15,base*(0.62+0.06*u),edge*fp)));
     const shrink=Math.min(edge/74,s/52,1);
-    const showName=edge>=20;
+    const showName=edgeRaw>=20;
     const gapText=Math.max(1,Math.round(Math.min(fsName,fsTicker)*0.08));
     const lhName=1.18;
     const lhTicker=1.12;
     const textStackH=Math.round((showName?fsName*lhName+gapText:0)+fsTicker*lhTicker);
-    const capCell=Math.floor(Math.min(56,
-      cw*(compact?0.52:0.44),
-      edge*(compact?0.48:0.38),
-      tallCell?Math.min(cw*(compact?0.60:0.55),ch*(compact?0.39:0.34)):ch*(compact?0.50:0.42)
-    ));
-    const logoPx=Math.max(10,Math.min(capCell,compact
+    const cwCap=cwU*(0.44+0.08*u);
+    const edgeCap=edge*(0.38+0.1*u);
+    const tallCap=tallCell
+      ?Math.min(cwU*(0.55+0.05*u),chU*(0.34+0.05*u))
+      :chU*(0.42+0.08*u);
+    const capCell=Math.floor(Math.min(56,cwCap,edgeCap,tallCap));
+    const logoPx=Math.max(10,Math.min(capCell,u>0.12
       ?Math.max(textStackH,Math.floor(capCell*0.76))
       :textStackH));
-    const showLogo=edge>=30&&area>=900&&shrink>=0.4;
-    const showSub=edge>=60&&area>=3000;
-    const tight=edge<46;
+    const showLogo=edgeRaw>=30&&area>=900&&shrink>=0.4;
+    const showSub=edgeRaw>=60&&area>=3000;
+    const tight=edgeRaw<46;
     return{fsTicker,fsName,fsPrice,logoPx,showLogo,showName,showSub,shrink,tallCell,tight};
   }
 
@@ -1674,8 +1692,8 @@
     }
     showTreemapStatus('',false);
 
-    const w=Math.max(200,wrap.clientWidth-8);
-    const h=Math.max(260,Math.floor(wrap.clientHeight-8));
+    const w=Math.max(200,Math.floor((wrap.clientWidth-8)/8)*8);
+    const h=Math.max(260,Math.floor(Math.floor(wrap.clientHeight-8)/8)*8);
     canvas.style.width=w+'px';
     canvas.style.height=h+'px';
 
