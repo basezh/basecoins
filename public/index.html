@@ -1455,7 +1455,11 @@
     const cw=cellEl.clientWidth;
     const ch=cellEl.clientHeight;
     const tall=ch>cw;
-    const cap=Math.floor(Math.min(56,cw*(tall?0.54:0.4),Math.min(cw,ch)*0.45));
+    const m=Math.min(cw,ch);
+    const compact=m<54;
+    const cap=Math.floor(Math.min(56,
+      cw*(tall?(compact?0.60:0.54):(compact?0.48:0.4)),
+      m*(compact?0.52:0.45)));
     const raw=cellEl.getAttribute('data-layout-logo');
     const layoutPx=raw!=null&&raw!==''?parseInt(raw,10):NaN;
     const floor=(!isNaN(layoutPx)&&layoutPx>0)?layoutPx:10;
@@ -1527,11 +1531,15 @@
     const edge=Math.max(1,minSide);
     const s=Math.sqrt(Math.max(1,area));
     const tallCell=ch>cw;
-    const k=Math.max(0.3,Math.min(1,Math.min(edge/84,s/54)));
-    const base=(s/5.15)*k;
-    const fsTicker=Math.round(Math.max(4,Math.min(22,base*1.05,edge*0.22)));
-    const fsName=Math.round(Math.max(4,Math.min(13,base*0.48,edge*0.13)));
-    const fsPrice=Math.round(Math.max(4,Math.min(15,base*0.62,edge*0.15)));
+    const compact=edge<54;
+    const k=Math.max(compact?0.44:0.3,Math.min(1,Math.min(edge/84,s/54)));
+    const base=(s/(compact?4.75:5.15))*k;
+    const ft=compact?0.28:0.22;
+    const fn=compact?0.17:0.13;
+    const fp=compact?0.20:0.15;
+    const fsTicker=Math.round(Math.max(4,Math.min(22,base*(compact?1.12:1.05),edge*ft)));
+    const fsName=Math.round(Math.max(4,Math.min(13,base*(compact?0.52:0.48),edge*fn)));
+    const fsPrice=Math.round(Math.max(4,Math.min(15,base*(compact?0.68:0.62),edge*fp)));
     const shrink=Math.min(edge/74,s/52,1);
     const showName=edge>=20;
     const gapText=Math.max(1,Math.round(Math.min(fsName,fsTicker)*0.08));
@@ -1539,11 +1547,13 @@
     const lhTicker=1.12;
     const textStackH=Math.round((showName?fsName*lhName+gapText:0)+fsTicker*lhTicker);
     const capCell=Math.floor(Math.min(56,
-      cw*0.44,
-      edge*0.38,
-      tallCell?Math.min(cw*0.55,ch*0.34):ch*0.42
+      cw*(compact?0.52:0.44),
+      edge*(compact?0.48:0.38),
+      tallCell?Math.min(cw*(compact?0.60:0.55),ch*(compact?0.39:0.34)):ch*(compact?0.50:0.42)
     ));
-    const logoPx=Math.max(10,Math.min(capCell,textStackH));
+    const logoPx=Math.max(10,Math.min(capCell,compact
+      ?Math.max(textStackH,Math.floor(capCell*0.76))
+      :textStackH));
     const showLogo=edge>=30&&area>=900&&shrink>=0.4;
     const showSub=edge>=60&&area>=3000;
     const tight=edge<46;
