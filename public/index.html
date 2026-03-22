@@ -835,7 +835,7 @@
             <div class="th-sort" data-sort="change">Change <span class="arrow" id="arrow-change-desktop"></span></div>
             <div class="th-sort" data-sort="volume">Volume <span class="arrow" id="arrow-volume-desktop">▼</span></div>
             <div class="th-sort" data-sort="fdv">FDV <span class="arrow" id="arrow-fdv-desktop"></span></div>
-            <div>Age</div>
+            <div class="th-sort" data-sort="age">Age <span class="arrow" id="arrow-age-desktop"></span></div>
           </div>
 
           <div class="thead mobile" id="theadMobile" style="display:none;">
@@ -844,7 +844,7 @@
             <div class="th-sort" data-sort="change">Price ± <span class="arrow" id="arrow-change-mobile"></span></div>
             <div class="th-sort" data-sort="volume">Volume <span class="arrow" id="arrow-volume-mobile">▼</span></div>
             <div class="th-sort" data-sort="fdv">FDV <span class="arrow" id="arrow-fdv-mobile"></span></div>
-            <div>Age</div>
+            <div class="th-sort" data-sort="age">Age <span class="arrow" id="arrow-age-mobile"></span></div>
           </div>
 
           <div class="rows" id="rows"></div>
@@ -1132,6 +1132,10 @@
       }else if(k === 'fdv'){
         av = a._fdv;
         bv = b._fdv;
+      }else if(k === 'age'){
+        const ta=a.dex?.createdAt, tb=b.dex?.createdAt;
+        av = ta!=null && !isNaN(Number(ta)) ? Number(ta) : null;
+        bv = tb!=null && !isNaN(Number(tb)) ? Number(tb) : null;
       }else{
         av = a._volume;
         bv = b._volume;
@@ -1150,9 +1154,11 @@
       'arrow-change-desktop',
       'arrow-volume-desktop',
       'arrow-fdv-desktop',
+      'arrow-age-desktop',
       'arrow-change-mobile',
       'arrow-volume-mobile',
-      'arrow-fdv-mobile'
+      'arrow-fdv-mobile',
+      'arrow-age-mobile'
     ];
     ids.forEach(id=>{
       const el=document.getElementById(id);
