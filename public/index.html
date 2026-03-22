@@ -505,8 +505,11 @@
     color:#fff;
     display:flex;
     flex-direction:column;
+    align-items:center;
+    justify-content:center;
     box-sizing:border-box;
-    padding:6px;
+    padding:8px;
+    text-align:center;
     text-shadow:0 1px 3px rgba(0,0,0,.85);
     transition:filter .12s, box-shadow .12s;
   }
@@ -526,37 +529,59 @@
     filter:none;
     box-shadow:none;
   }
-  .tm-row{display:flex;align-items:center;gap:6px;min-width:0}
-  .tm-logo{
-    border-radius:6px;
-    object-fit:cover;
-    border:1px solid rgba(255,255,255,.25);
-    flex-shrink:0;
-  }
-  .tm-head{min-width:0;flex:1}
-  .tm-ticker{
-    font-weight:700;
-    line-height:1.1;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-  }
-  .tm-name{
-    opacity:.92;
-    line-height:1.15;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-  }
-  .tm-meta{
-    margin-top:auto;
+  .tm-stack{
     display:flex;
     flex-direction:column;
-    gap:1px;
-    line-height:1.2;
-    opacity:.95;
+    align-items:center;
+    justify-content:center;
+    gap:0.2em;
+    max-width:100%;
+    min-width:0;
+    width:100%;
   }
-  .tm-line{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tm-logo-center{
+    border-radius:8px;
+    object-fit:cover;
+    border:1px solid rgba(255,255,255,.3);
+    flex-shrink:0;
+  }
+  .tm-name-center{
+    font-weight:500;
+    line-height:1.15;
+    opacity:.95;
+    max-width:100%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .tm-ticker-center{
+    font-weight:700;
+    line-height:1.1;
+    max-width:100%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .tm-pricechg{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:center;
+    gap:0.35em;
+    font-weight:600;
+    line-height:1.2;
+    max-width:100%;
+  }
+  .tm-sub{
+    margin-top:0.15em;
+    opacity:.82;
+    font-weight:500;
+    line-height:1.2;
+    max-width:100%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
   .tm-chg-up{color:#b8ff7a}
   .tm-chg-down{color:#ffb4a8}
   .tm-chg-flat{color:#e8e8ee}
@@ -1181,7 +1206,7 @@
     const items=rowsForTreemap();
     const total=items.reduce((s,r)=>s+r._fdv,0);
     if(total<=0) return [];
-    const thr=total*0.01;
+    const thr=total*0.005;
     const big=[], small=[];
     for(const r of items){
       if(r._fdv>=thr) big.push(r);
@@ -1252,6 +1277,19 @@
     });
   }
 
+  function treemapTypeScale(minSide,area){
+    const baseFs=Math.max(8,Math.min(26,Math.sqrt(Math.max(1,area))/4.6));
+    return{
+      fsTicker:Math.round(Math.min(28,baseFs*1.2)),
+      fsName:Math.round(Math.max(9,baseFs*0.62)),
+      fsPrice:Math.round(Math.max(9,baseFs*0.78)),
+      logoPx:Math.round(Math.min(60,Math.max(22,minSide*0.34))),
+      showLogo:minSide>=36,
+      showName:minSide>=30,
+      showSub:minSide>=72
+    };
+  }
+
   function runTreemapLayout(){
     const canvas=document.getElementById('treemapCanvas');
     const wrap=document.getElementById('treemapWrap');
@@ -1302,7 +1340,7 @@
       const cw=x1-x0,ch=y1-y0;
       const minSide=Math.min(cw,ch);
       const area=Math.max(1,cw*ch);
-      const baseFs=Math.max(7,Math.min(15,Math.sqrt(area)/9));
+      const ty=treemapTypeScale(minSide,area);
 
       if(d.type==='o'){
         const div=document.createElement('div');
@@ -1312,22 +1350,19 @@
         div.style.width=cw+'px';
         div.style.height=ch+'px';
         div.style.background=heatColor(d.chg);
-        div.style.fontSize=baseFs+'px';
         const pct=((d.fdv/total)*100).toFixed(1);
-        if(minSide>=64){
-          div.innerHTML=`<div class="tm-ticker" style="font-size:${baseFs+3}px">${escHtml('其他')}</div>
-            <div class="tm-name" style="font-size:${Math.max(7,baseFs-1)}px">${escHtml(`${d.count} 个代币`)}</div>
-            <div class="tm-meta" style="font-size:${Math.max(7,baseFs-1)}px">
-              <div class="tm-line"><span class="${tmChgClass(d.chg)}">${escHtml(fmtTmChg(d.chg))}</span> · 加权涨跌</div>
-              <div class="tm-line">FDV ${escHtml(fmtUSD(d.fdv))} · Vol ${escHtml(fmtUSD(d.vol))}</div>
-              <div class="tm-line" style="opacity:.85">${escHtml(pct)}% of view</div>
+        if(minSide>=26){
+          const subLine=ty.showSub
+            ? `<div class="tm-sub" style="font-size:${Math.max(8,Math.round(ty.fsName*0.88))}px">${escHtml(`FDV ${fmtUSD(d.fdv)} · Vol ${fmtUSD(d.vol)} · ${pct}%`)}</div>`
+            : (minSide>=44 ? `<div class="tm-sub" style="font-size:${Math.max(8,Math.round(ty.fsName*0.85))}px">${escHtml(`${fmtUSD(d.fdv)} · ${pct}%`)}</div>` : '');
+          div.innerHTML=`<div class="tm-stack">
+              <div class="tm-ticker-center" style="font-size:${ty.fsTicker}px">${escHtml('其他')}</div>
+              ${minSide>=36?`<div class="tm-name-center" style="font-size:${ty.fsName}px">${escHtml(`${d.count} 个代币`)}</div>`:''}
+              <div class="tm-pricechg" style="font-size:${ty.fsPrice}px"><span class="${tmChgClass(d.chg)}">${escHtml(fmtTmChg(d.chg))}</span></div>
+              ${subLine}
             </div>`;
-        }else if(minSide>=40){
-          div.innerHTML=`<div class="tm-ticker" style="font-size:${baseFs+2}px">${escHtml('其他')}</div>
-            <div class="tm-line ${tmChgClass(d.chg)}" style="font-size:${baseFs}px;margin-top:4px">${escHtml(fmtTmChg(d.chg))}</div>
-            <div class="tm-line" style="font-size:${Math.max(7,baseFs-1)}px">${escHtml(fmtUSD(d.fdv))}</div>`;
         }else{
-          div.innerHTML=`<div class="tm-ticker" style="font-size:${Math.max(7,baseFs)}px">${escHtml('其他')}</div>`;
+          div.innerHTML=`<div class="tm-stack"><div class="tm-ticker-center" style="font-size:${Math.max(7,Math.round(minSide*0.42))}px">${escHtml('其他')}</div></div>`;
         }
         canvas.appendChild(div);
         continue;
@@ -1346,57 +1381,38 @@
       a.style.width=cw+'px';
       a.style.height=ch+'px';
       a.style.background=heatColor(r._change);
-      a.style.fontSize=baseFs+'px';
 
       const ticker=escHtml(r.dex?.baseSymbol||r.symbol||'—');
       const fullName=r.name||'';
-      const shortName=fullName.length>28?fullName.slice(0,28)+'…':fullName;
+      const shortName=fullName.length>34?fullName.slice(0,34)+'…':fullName;
+      a.title=fullName||undefined;
 
-      if(minSide>=88){
-        const logoPx=Math.min(28,Math.max(18,minSide/4));
-        a.innerHTML=`<div class="tm-row">
-            <img class="tm-logo" alt="" width="22" height="22">
-            <div class="tm-head">
-              <div class="tm-ticker" style="font-size:${baseFs+3}px">${ticker}</div>
-              <div class="tm-name" style="font-size:${Math.max(7,baseFs-1)}px">${escHtml(shortName||'—')}</div>
-            </div>
-          </div>
-          <div class="tm-meta" style="font-size:${Math.max(7,baseFs-1)}px">
-            <div class="tm-line">${escHtml(fmtPrice(r._price))} · <span class="${tmChgClass(r._change)}">${escHtml(fmtTmChg(r._change))}</span></div>
-            <div class="tm-line">FDV ${escHtml(fmtUSD(r._fdv))} · Vol ${escHtml(fmtUSD(r._volume))}</div>
-            <div class="tm-line" style="opacity:.85">${escHtml(((r._fdv/total)*100).toFixed(1))}% of view</div>
-          </div>`;
-        const im=a.querySelector('.tm-logo');
-        if(im){
-          im.style.width=logoPx+'px';
-          im.style.height=logoPx+'px';
-          im.src=r.dex?.image||TM_PLACEHOLDER;
-          im.onerror=()=>{im.onerror=null;im.src=TM_PLACEHOLDER;};
-        }
-      }else if(minSide>=52){
-        const logoPx=Math.max(14,minSide/3.5);
-        a.innerHTML=`<div class="tm-row">
-            <img class="tm-logo" alt="">
-            <div class="tm-head">
-              <div class="tm-ticker" style="font-size:${baseFs+2}px">${ticker}</div>
-            </div>
-          </div>
-          <div class="tm-meta" style="font-size:${Math.max(7,baseFs-1)}px;margin-top:4px">
-            <div class="tm-line"><span class="${tmChgClass(r._change)}">${escHtml(fmtTmChg(r._change))}</span></div>
-            <div class="tm-line">${escHtml(fmtUSD(r._fdv))}</div>
-          </div>`;
-        const im=a.querySelector('.tm-logo');
-        if(im){
-          im.style.width=logoPx+'px';
-          im.style.height=logoPx+'px';
-          im.src=r.dex?.image||TM_PLACEHOLDER;
-          im.onerror=()=>{im.onerror=null;im.src=TM_PLACEHOLDER;};
-        }
-      }else if(minSide>=34){
-        a.innerHTML=`<div class="tm-ticker" style="font-size:${baseFs+1}px">${ticker}</div>
-          <div class="tm-line ${tmChgClass(r._change)}" style="font-size:${baseFs}px;margin-top:2px">${escHtml(fmtTmChg(r._change))}</div>`;
-      }else{
-        a.innerHTML=`<div class="tm-ticker" style="font-size:${Math.max(7,baseFs)}px">${ticker}</div>`;
+      if(minSide<24){
+        a.innerHTML=`<div class="tm-stack"><div class="tm-ticker-center" style="font-size:${Math.max(7,Math.round(minSide*0.38))}px">${ticker}</div></div>`;
+        canvas.appendChild(a);
+        continue;
+      }
+
+      const bits=[];
+      if(ty.showLogo){
+        bits.push('<img class="tm-logo-center" alt="">');
+      }
+      if(ty.showName){
+        bits.push(`<div class="tm-name-center" style="font-size:${ty.fsName}px">${escHtml(shortName||'—')}</div>`);
+      }
+      bits.push(`<div class="tm-ticker-center" style="font-size:${ty.fsTicker}px">${ticker}</div>`);
+      bits.push(`<div class="tm-pricechg" style="font-size:${ty.fsPrice}px"><span>${escHtml(fmtPrice(r._price))}</span><span class="${tmChgClass(r._change)}">${escHtml(fmtTmChg(r._change))}</span></div>`);
+      if(ty.showSub){
+        bits.push(`<div class="tm-sub" style="font-size:${Math.max(8,Math.round(ty.fsName*0.88))}px">${escHtml(`FDV ${fmtUSD(r._fdv)} · Vol ${fmtUSD(r._volume)} · ${((r._fdv/total)*100).toFixed(1)}%`)}</div>`);
+      }
+      a.innerHTML=`<div class="tm-stack">${bits.join('')}</div>`;
+
+      const im=a.querySelector('.tm-logo-center');
+      if(im){
+        im.style.width=ty.logoPx+'px';
+        im.style.height=ty.logoPx+'px';
+        im.src=r.dex?.image||TM_PLACEHOLDER;
+        im.onerror=()=>{im.onerror=null;im.src=TM_PLACEHOLDER;};
       }
 
       canvas.appendChild(a);
