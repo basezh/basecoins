@@ -1268,10 +1268,25 @@
     sort:{key:'volume',dir:'desc'}
   };
 
-  const TM_PLACEHOLDER='data:image/svg+xml,'+encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="#ccc"/><text x="50%" y="55%" text-anchor="middle" font-size="14" fill="#333">?</text></svg>'
-  );
-  const TM_MERGE_SMALL_FRAC=0.005;
+  const Treemap={
+    LOGO_PLACEHOLDER:'data:image/svg+xml,'+encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="#ccc"/><text x="50%" y="55%" text-anchor="middle" font-size="14" fill="#333">?</text></svg>'
+    ),
+    MERGE_FRAC:0.005,
+    TEXT_MIN_SCALE:0.34,
+    D3_SQUARIFY_RATIO:2.2,
+    FIT_LINE_ITERS:38,
+    FIT_FLEX_ITERS:36,
+    FIT_NAME_TICKER_ITERS:42,
+    FIT_MINI_ITERS:32,
+    RESIZE_DEBOUNCE_MS:40,
+    CANVAS_GRID:8,
+    LAYOUT_PAD:8,
+    LOGO_ATTR:'data-layout-logo',
+    LOGO_MAX_PX:56,
+    LOGO_MIN_PX:10,
+    HEAT_RANGE:24,
+  };
 
   function escHtml(s){
     return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -1307,7 +1322,7 @@
     const items=rowsForTreemap();
     const total=items.reduce((s,r)=>s+r._fdv,0);
     if(total<=0) return [];
-    const thr=total*TM_MERGE_SMALL_FRAC;
+    const thr=total*Treemap.MERGE_FRAC;
     const big=[], small=[];
     for(const r of items){
       if(r._fdv>=thr) big.push(r);
@@ -1346,36 +1361,33 @@
     return heatRgb(c0,c1,u);
   }
 
+  const TREEMAP_HEAT_UP=[
+    [0,   [34, 88, 38]],
+    [2.5, [28, 100, 42]],
+    [5,   [24, 116, 48]],
+    [8,   [20, 134, 54]],
+    [11,  [17, 152, 62]],
+    [14.5,[14, 170, 70]],
+    [18,  [12, 188, 80]],
+    [24,  [8,  208, 90]],
+  ];
+  const TREEMAP_HEAT_DN=[
+    [-24, [232, 22, 36]],
+    [-18, [210, 28, 38]],
+    [-13, [186, 36, 42]],
+    [-9,  [162, 44, 46]],
+    [-6,  [138, 52, 50]],
+    [-3.5,[118, 58, 54]],
+    [-1.5,[100, 64, 58]],
+    [0,   [82,  72, 62]],
+  ];
+
   function heatColor(pct){
     if(pct==null||isNaN(pct)) return 'rgb(72,74,82)';
-    const lim=24;
+    const lim=Treemap.HEAT_RANGE;
     const x=Math.max(-lim,Math.min(lim,pct));
-    if(x>0){
-      const stops=[
-        [0,   [34, 88, 38]],
-        [2.5, [28, 100, 42]],
-        [5,   [24, 116, 48]],
-        [8,   [20, 134, 54]],
-        [11,  [17, 152, 62]],
-        [14.5,[14, 170, 70]],
-        [18,  [12, 188, 80]],
-        [24,  [8,  208, 90]],
-      ];
-      return heatInterp(x,stops);
-    }
-    if(x<0){
-      const stops=[
-        [-24, [232, 22, 36]],
-        [-18, [210, 28, 38]],
-        [-13, [186, 36, 42]],
-        [-9,  [162, 44, 46]],
-        [-6,  [138, 52, 50]],
-        [-3.5,[118, 58, 54]],
-        [-1.5,[100, 64, 58]],
-        [0,   [82,  72, 62]],
-      ];
-      return heatInterp(x,stops);
-    }
+    if(x>0) return heatInterp(x,TREEMAP_HEAT_UP);
+    if(x<0) return heatInterp(x,TREEMAP_HEAT_DN);
     return 'rgb(72,74,82)';
   }
 
@@ -1414,23 +1426,16 @@
     canvas.style.display='none';
   }
 
-  const TM_TEXT_MIN_SCALE=0.34;
-  const TM_D3_SQUARIFY_RATIO=2.2;
-  const TM_LINE_SHRINK_ITERS=38;
-  const TM_FLEX_SHRINK_ITERS=36;
-  const TM_NAME_TICKER_ITERS=42;
-  const TM_MINI_SHRINK_ITERS=32;
-
   function shrinkTreemapLineToWidth(el,containerW,fs0){
     if(!el||fs0==null||isNaN(fs0)) return;
     let fs=parseFloat(el.style.fontSize);
     if(isNaN(fs)||fs<=0) fs=fs0;
     const base=fs;
-    for(let j=0;j<TM_LINE_SHRINK_ITERS;j++){
+    for(let j=0;j<Treemap.FIT_LINE_ITERS;j++){
       if(el.scrollWidth<=containerW+1) break;
       fs=Math.max(3,fs*0.88);
       el.style.fontSize=fs.toFixed(1)+'px';
-      if(fs<=base*TM_TEXT_MIN_SCALE) break;
+      if(fs<=base*Treemap.TEXT_MIN_SCALE) break;
     }
   }
 
@@ -1438,11 +1443,11 @@
     const fs0=parseFloat(el.style.fontSize);
     if(!fs0||isNaN(fs0)) return;
     let fs=fs0;
-    for(let j=0;j<TM_FLEX_SHRINK_ITERS;j++){
+    for(let j=0;j<Treemap.FIT_FLEX_ITERS;j++){
       if(el.scrollWidth<=el.clientWidth+1) break;
       fs=Math.max(3,fs*0.88);
       el.style.fontSize=fs.toFixed(1)+'px';
-      if(fs<=fs0*TM_TEXT_MIN_SCALE) break;
+      if(fs<=fs0*Treemap.TEXT_MIN_SCALE) break;
     }
   }
 
@@ -1451,56 +1456,43 @@
     const nameFs0=nameEl?parseFloat(nameEl.style.fontSize)||0:0;
     const tickFs0=tickEl?parseFloat(tickEl.style.fontSize)||0:0;
     let scale=1;
-    for(let i=0;i<TM_NAME_TICKER_ITERS;i++){
+    for(let i=0;i<Treemap.FIT_NAME_TICKER_ITERS;i++){
       const nw=nameEl?nameEl.scrollWidth:0;
       const tw=tickEl?tickEl.scrollWidth:0;
       if(Math.max(nw,tw)<=maxInnerW) break;
       scale*=0.9;
       if(nameEl) nameEl.style.fontSize=Math.max(3,Math.round(nameFs0*scale*10)/10)+'px';
       if(tickEl) tickEl.style.fontSize=Math.max(3,Math.round(tickFs0*scale*10)/10)+'px';
-      if(scale<TM_TEXT_MIN_SCALE) break;
+      if(scale<Treemap.TEXT_MIN_SCALE) break;
     }
   }
 
-  function fitTreemapPriceRow(el){
+  function fitTreemapStackOrFlexRow(el,stackClass,lineSelector,lineFsFallback){
     if(!el) return;
     const w=el.clientWidth+1;
-    if(el.classList.contains('tm-pricechg--stack')){
-      el.querySelectorAll('.tm-price-line,.tm-chg-line').forEach(node=>{
-        shrinkTreemapLineToWidth(node,w,parseFloat(node.style.fontSize)||parseFloat(el.style.fontSize)||12);
+    if(el.classList.contains(stackClass)){
+      el.querySelectorAll(lineSelector).forEach(node=>{
+        shrinkTreemapLineToWidth(node,w,parseFloat(node.style.fontSize)||parseFloat(el.style.fontSize)||lineFsFallback);
       });
-    }else{
-      shrinkTreemapFlexRow(el);
-    }
+    }else shrinkTreemapFlexRow(el);
   }
 
-  function fitTreemapSubRow(el){
-    if(!el) return;
-    const w=el.clientWidth+1;
-    if(el.classList.contains('tm-subwrap--stack')){
-      el.querySelectorAll('.tm-sub-line').forEach(line=>{
-        shrinkTreemapLineToWidth(line,w,parseFloat(line.style.fontSize)||parseFloat(el.style.fontSize)||9);
-      });
-    }else{
-      shrinkTreemapFlexRow(el);
-    }
+  function treemapLogoCapPx(cw,ch){
+    const tall=ch>cw;
+    const mq=Math.max(6,Math.round(Math.min(cw,ch)/6)*6);
+    const u=Math.max(0,Math.min(1,(54-mq)/28));
+    return Math.floor(Math.min(Treemap.LOGO_MAX_PX,
+      cw*(tall?(0.54+0.06*u):(0.4+0.08*u)),
+      mq*(0.45+0.07*u)));
   }
 
   function syncTreemapLogoSize(img,cellEl){
     if(!img) return;
-    const cw=cellEl.clientWidth;
-    const ch=cellEl.clientHeight;
-    const tall=ch>cw;
-    const mRaw=Math.min(cw,ch);
-    const mq=Math.max(6,Math.round(mRaw/6)*6);
-    const u=Math.max(0,Math.min(1,(54-mq)/28));
-    const cap=Math.floor(Math.min(56,
-      cw*(tall?(0.54+0.06*u):(0.4+0.08*u)),
-      mq*(0.45+0.07*u)));
-    const raw=cellEl.getAttribute('data-layout-logo');
+    const cap=treemapLogoCapPx(cellEl.clientWidth,cellEl.clientHeight);
+    const raw=cellEl.getAttribute(Treemap.LOGO_ATTR);
     const layoutPx=raw!=null&&raw!==''?parseInt(raw,10):NaN;
-    const base=(!isNaN(layoutPx)&&layoutPx>0)?layoutPx:10;
-    let side=Math.max(10,Math.min(cap,base));
+    const base=(!isNaN(layoutPx)&&layoutPx>0)?layoutPx:Treemap.LOGO_MIN_PX;
+    let side=Math.max(Treemap.LOGO_MIN_PX,Math.min(cap,base));
     side=Math.round(side/2)*2;
     img.style.width=side+'px';
     img.style.height=side+'px';
@@ -1513,8 +1505,8 @@
     const nameEl=textCol?.querySelector('.tm-name-side');
     const tickEl=textCol?.querySelector('.tm-ticker-side');
     if(textCol) scaleTreemapNameTickerPair(nameEl,tickEl,textCol.clientWidth+1);
-    fitTreemapPriceRow(a.querySelector('.tm-pricechg'));
-    fitTreemapSubRow(a.querySelector('.tm-subwrap'));
+    fitTreemapStackOrFlexRow(a.querySelector('.tm-pricechg'),'tm-pricechg--stack','.tm-price-line,.tm-chg-line',12);
+    fitTreemapStackOrFlexRow(a.querySelector('.tm-subwrap'),'tm-subwrap--stack','.tm-sub-line',9);
   }
 
   function fitTreemapMiniCell(a){
@@ -1522,11 +1514,11 @@
     if(!tick) return;
     const fs0=parseFloat(tick.style.fontSize)||7;
     let fs=fs0;
-    for(let i=0;i<TM_MINI_SHRINK_ITERS;i++){
+    for(let i=0;i<Treemap.FIT_MINI_ITERS;i++){
       if(tick.scrollWidth<=a.clientWidth-2) break;
       fs=Math.max(3,fs*0.88);
       tick.style.fontSize=fs.toFixed(1)+'px';
-      if(fs<=fs0*TM_TEXT_MIN_SCALE) break;
+      if(fs<=fs0*Treemap.TEXT_MIN_SCALE) break;
     }
   }
 
@@ -1534,8 +1526,8 @@
     const nameEl=div.querySelector('.tm-name-side');
     const tickEl=div.querySelector('.tm-ticker-side');
     scaleTreemapNameTickerPair(nameEl,tickEl,div.clientWidth-2);
-    fitTreemapPriceRow(div.querySelector('.tm-pricechg'));
-    fitTreemapSubRow(div.querySelector('.tm-subwrap'));
+    fitTreemapStackOrFlexRow(div.querySelector('.tm-pricechg'),'tm-pricechg--stack','.tm-price-line,.tm-chg-line',12);
+    fitTreemapStackOrFlexRow(div.querySelector('.tm-subwrap'),'tm-subwrap--stack','.tm-sub-line',9);
   }
 
   function runTreemapTextFit(canvas){
@@ -1571,7 +1563,7 @@
     treemapResizeDebounce=setTimeout(()=>{
       treemapResizeDebounce=null;
       layoutTreemap();
-    },40);
+    },Treemap.RESIZE_DEBOUNCE_MS);
   }
 
   function treemapTypeScale(minSide,area,cw,ch){
@@ -1605,8 +1597,8 @@
     const tallCap=tallCell
       ?Math.min(cwU*(0.55+0.05*u),chU*(0.34+0.05*u))
       :chU*(0.42+0.08*u);
-    const capCell=Math.floor(Math.min(56,cwCap,edgeCap,tallCap));
-    const logoPx=Math.max(10,Math.min(capCell,u>0.12
+    const capCell=Math.floor(Math.min(Treemap.LOGO_MAX_PX,cwCap,edgeCap,tallCap));
+    const logoPx=Math.max(Treemap.LOGO_MIN_PX,Math.min(capCell,u>0.12
       ?Math.max(textStackH,Math.floor(capCell*0.76))
       :textStackH));
     const showLogo=edgeRaw>=30&&area>=900&&shrink>=0.4;
@@ -1673,6 +1665,84 @@
     </div>`;
   }
 
+  function treemapHierarchyValue(d){
+    if(!d||d.children) return 0;
+    if(d.type==='t') return Math.max(0,d.row._fdv||0);
+    if(d.type==='o') return Math.max(0,d.fdv||0);
+    return 0;
+  }
+
+  function treemapReadCanvasSize(wrapEl){
+    const g=Treemap.CANVAS_GRID;
+    const p=Treemap.LAYOUT_PAD;
+    const w=Math.max(200,Math.floor((wrapEl.clientWidth-p)/g)*g);
+    const h=Math.max(260,Math.floor(Math.floor(wrapEl.clientHeight-p)/g)*g);
+    return{w,h};
+  }
+
+  function treemapMountOtherCell(d,box,ty,minSide){
+    const div=document.createElement('div');
+    div.className='treemap-cell treemap-other'+(ty.tight?' treemap-cell--tight':'');
+    applyTreemapCellGeometry(div,box,heatColor(d.chg));
+    if(minSide>=22){
+      const subLine=treemapOtherSubHtml(ty,minSide,d.fdv,d.vol);
+      const chgCls=tmChgClass(d.chg);
+      div.innerHTML=`<div class="tm-stack${ty.tight?' tm-stack--tight':''}">
+          <div class="tm-ticker-side" style="font-size:${ty.fsTicker}px">${escHtml('其他')}</div>
+          ${minSide>=30?`<div class="tm-name-side" style="font-size:${ty.fsName}px">${escHtml(`${d.count} 个代币`)}</div>`:''}
+          ${treemapOtherChgHtml(ty.fsPrice,chgCls,fmtTmChg(d.chg))}
+          ${subLine}
+        </div>`;
+    }else{
+      div.innerHTML=`<div class="tm-stack"><div class="tm-ticker-side" style="font-size:${ty.fsTicker}px">${escHtml('其他')}</div></div>`;
+    }
+    return div;
+  }
+
+  function treemapMountTokenCell(d,box,ty,minSide){
+    const r=d.row;
+    if(!r) return null;
+    const a=document.createElement('a');
+    a.className='treemap-cell'+(ty.tight?' treemap-cell--tight':'');
+    a.href=dexUrl(r);
+    a.target='_blank';
+    a.rel='noopener noreferrer';
+    applyTreemapCellGeometry(a,box,heatColor(r._change));
+    const ticker=escHtml(r.dex?.baseSymbol||r.symbol||'—');
+    const fullName=r.name||'';
+    a.title=fullName||undefined;
+    if(minSide<18){
+      a.innerHTML=`<div class="tm-stack"><div class="tm-ticker-side" style="font-size:${ty.fsTicker}px">${ticker}</div></div>`;
+      return a;
+    }
+    const tallCell=ty.tallCell;
+    const topClass=['tm-toprow',tallCell?'tm-toprow--stack':'',ty.showLogo?'':'tm-toprow--solo'].filter(Boolean).join(' ');
+    let topInner='';
+    if(ty.showLogo) topInner+='<img class="tm-logo-side" alt="">';
+    topInner+='<div class="tm-textcol">';
+    if(ty.showName) topInner+=`<div class="tm-name-side" style="font-size:${ty.fsName}px">${escHtml(fullName||'—')}</div>`;
+    topInner+=`<div class="tm-ticker-side" style="font-size:${ty.fsTicker}px">${ticker}</div>`;
+    topInner+='</div>';
+    const subFs=Math.max(4,Math.round(ty.fsName*0.88));
+    const subLine=ty.showSub?treemapFdvVolSubHtml(tallCell,subFs,r._fdv,r._volume):'';
+    const chgCls=tmChgClass(r._change);
+    const priceHtml=treemapPriceChgHtml(tallCell,ty.fsPrice,fmtPrice(r._price),chgCls,fmtTmChg(r._change));
+    a.innerHTML=`<div class="tm-stack${ty.tight?' tm-stack--tight':''}">
+        <div class="${topClass}">${topInner}</div>
+        ${priceHtml}
+        ${subLine}
+      </div>`;
+    const im=a.querySelector('.tm-logo-side');
+    if(im){
+      a.setAttribute(Treemap.LOGO_ATTR,String(ty.logoPx));
+      im.style.width=ty.logoPx+'px';
+      im.style.height=ty.logoPx+'px';
+      im.src=r.dex?.image||Treemap.LOGO_PLACEHOLDER;
+      im.onerror=()=>{im.onerror=null;im.src=Treemap.LOGO_PLACEHOLDER;};
+    }
+    return a;
+  }
+
   function runTreemapLayout(){
     const canvas=document.getElementById('treemapCanvas');
     const wrap=document.getElementById('treemapWrap');
@@ -1692,114 +1762,34 @@
     }
     showTreemapStatus('',false);
 
-    const w=Math.max(200,Math.floor((wrap.clientWidth-8)/8)*8);
-    const h=Math.max(260,Math.floor(Math.floor(wrap.clientHeight-8)/8)*8);
+    const {w,h}=treemapReadCanvasSize(wrap);
     canvas.style.width=w+'px';
     canvas.style.height=h+'px';
 
     const root=d3.hierarchy({children:nodes},d=>d.children)
-      .sum(d=>{
-        if(!d||d.children) return 0;
-        if(d.type==='t') return Math.max(0,d.row._fdv||0);
-        if(d.type==='o') return Math.max(0,d.fdv||0);
-        return 0;
-      })
+      .sum(treemapHierarchyValue)
       .sort((a,b)=>(b.value||0)-(a.value||0));
 
     d3.treemap()
-      .tile(d3.treemapSquarify.ratio(TM_D3_SQUARIFY_RATIO))
+      .tile(d3.treemapSquarify.ratio(Treemap.D3_SQUARIFY_RATIO))
       .size([h,w])
       .paddingOuter(2)
       .paddingInner(2)
       .round(true)
       (root);
 
-    const leaves=root.leaves();
-
-    for(const leaf of leaves){
+    for(const leaf of root.leaves()){
       const d=leaf.data;
       const box=treemapLeafScreenRect(leaf);
-      const {cw,ch}=box;
-      const minSide=Math.min(cw,ch);
-      const area=Math.max(1,cw*ch);
-      const ty=treemapTypeScale(minSide,area,cw,ch);
-
+      const minSide=Math.min(box.cw,box.ch);
+      const area=Math.max(1,box.cw*box.ch);
+      const ty=treemapTypeScale(minSide,area,box.cw,box.ch);
       if(d.type==='o'){
-        const div=document.createElement('div');
-        div.className='treemap-cell treemap-other'+(ty.tight?' treemap-cell--tight':'');
-        applyTreemapCellGeometry(div,box,heatColor(d.chg));
-        if(minSide>=22){
-          const subLine=treemapOtherSubHtml(ty,minSide,d.fdv,d.vol);
-          const chgCls=tmChgClass(d.chg);
-          div.innerHTML=`<div class="tm-stack${ty.tight?' tm-stack--tight':''}">
-              <div class="tm-ticker-side" style="font-size:${ty.fsTicker}px">${escHtml('其他')}</div>
-              ${minSide>=30?`<div class="tm-name-side" style="font-size:${ty.fsName}px">${escHtml(`${d.count} 个代币`)}</div>`:''}
-              ${treemapOtherChgHtml(ty.fsPrice,chgCls,fmtTmChg(d.chg))}
-              ${subLine}
-            </div>`;
-        }else{
-          div.innerHTML=`<div class="tm-stack"><div class="tm-ticker-side" style="font-size:${ty.fsTicker}px">${escHtml('其他')}</div></div>`;
-        }
-        canvas.appendChild(div);
+        canvas.appendChild(treemapMountOtherCell(d,box,ty,minSide));
         continue;
       }
-
-      const r=d.row;
-      if(!r) continue;
-
-      const a=document.createElement('a');
-      a.className='treemap-cell'+(ty.tight?' treemap-cell--tight':'');
-      a.href=dexUrl(r);
-      a.target='_blank';
-      a.rel='noopener noreferrer';
-      applyTreemapCellGeometry(a,box,heatColor(r._change));
-
-      const ticker=escHtml(r.dex?.baseSymbol||r.symbol||'—');
-      const fullName=r.name||'';
-      a.title=fullName||undefined;
-
-      if(minSide<18){
-        a.innerHTML=`<div class="tm-stack"><div class="tm-ticker-side" style="font-size:${ty.fsTicker}px">${ticker}</div></div>`;
-        canvas.appendChild(a);
-        continue;
-      }
-
-      const tallCell=ty.tallCell;
-      const topClass=[
-        'tm-toprow',
-        tallCell?'tm-toprow--stack':'',
-        ty.showLogo?'':'tm-toprow--solo'
-      ].filter(Boolean).join(' ');
-      let topInner='';
-      if(ty.showLogo) topInner+='<img class="tm-logo-side" alt="">';
-      topInner+='<div class="tm-textcol">';
-      if(ty.showName){
-        topInner+=`<div class="tm-name-side" style="font-size:${ty.fsName}px">${escHtml(fullName||'—')}</div>`;
-      }
-      topInner+=`<div class="tm-ticker-side" style="font-size:${ty.fsTicker}px">${ticker}</div>`;
-      topInner+='</div>';
-
-      const subFs=Math.max(4,Math.round(ty.fsName*0.88));
-      const subLine=ty.showSub?treemapFdvVolSubHtml(tallCell,subFs,r._fdv,r._volume):'';
-      const chgCls=tmChgClass(r._change);
-      const priceHtml=treemapPriceChgHtml(tallCell,ty.fsPrice,fmtPrice(r._price),chgCls,fmtTmChg(r._change));
-
-      a.innerHTML=`<div class="tm-stack${ty.tight?' tm-stack--tight':''}">
-          <div class="${topClass}">${topInner}</div>
-          ${priceHtml}
-          ${subLine}
-        </div>`;
-
-      const im=a.querySelector('.tm-logo-side');
-      if(im){
-        a.setAttribute('data-layout-logo',String(ty.logoPx));
-        im.style.width=ty.logoPx+'px';
-        im.style.height=ty.logoPx+'px';
-        im.src=r.dex?.image||TM_PLACEHOLDER;
-        im.onerror=()=>{im.onerror=null;im.src=TM_PLACEHOLDER;};
-      }
-
-      canvas.appendChild(a);
+      const el=treemapMountTokenCell(d,box,ty,minSide);
+      if(el) canvas.appendChild(el);
     }
 
     scheduleTreemapTextFit(canvas);
