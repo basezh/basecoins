@@ -1331,15 +1331,52 @@
     return wrapped;
   }
 
+  function heatRgb(c0,c1,u){
+    const t=Math.max(0,Math.min(1,u));
+    return `rgb(${Math.round(c0[0]+(c1[0]-c0[0])*t)},${Math.round(c0[1]+(c1[1]-c0[1])*t)},${Math.round(c0[2]+(c1[2]-c0[2])*t)})`;
+  }
+
+  function heatInterp(x,stops){
+    let i=0;
+    while(i<stops.length-2&&x>stops[i+1][0]) i++;
+    const [x0,c0]=stops[i];
+    const [x1,c1]=stops[i+1];
+    if(x1===x0) return heatRgb(c0,c1,0);
+    const u=(x-x0)/(x1-x0);
+    return heatRgb(c0,c1,u);
+  }
+
   function heatColor(pct){
     if(pct==null||isNaN(pct)) return 'rgb(72,74,82)';
-    const p=Math.max(-20,Math.min(20,pct))/20;
-    if(p>=0){
-      const t=p;
-      return `rgb(${Math.round(18+25*(1-t))},${Math.round(95+75*t)},${Math.round(32+28*t)})`;
+    const lim=24;
+    const x=Math.max(-lim,Math.min(lim,pct));
+    if(x>0){
+      const stops=[
+        [0,   [34, 88, 38]],
+        [2.5, [28, 100, 42]],
+        [5,   [24, 116, 48]],
+        [8,   [20, 134, 54]],
+        [11,  [17, 152, 62]],
+        [14.5,[14, 170, 70]],
+        [18,  [12, 188, 80]],
+        [24,  [8,  208, 90]],
+      ];
+      return heatInterp(x,stops);
     }
-    const t=-p;
-    return `rgb(${Math.min(255,Math.round(180+60*t))},${Math.max(18,Math.round(45-25*t))},${Math.max(22,Math.round(38-18*t))})`;
+    if(x<0){
+      const stops=[
+        [-24, [232, 22, 36]],
+        [-18, [210, 28, 38]],
+        [-13, [186, 36, 42]],
+        [-9,  [162, 44, 46]],
+        [-6,  [138, 52, 50]],
+        [-3.5,[118, 58, 54]],
+        [-1.5,[100, 64, 58]],
+        [0,   [82,  72, 62]],
+      ];
+      return heatInterp(x,stops);
+    }
+    return 'rgb(72,74,82)';
   }
 
   function tmChgClass(c){
