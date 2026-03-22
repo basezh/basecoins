@@ -1261,10 +1261,17 @@
   const TM_PLACEHOLDER='data:image/svg+xml,'+encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="#ccc"/><text x="50%" y="55%" text-anchor="middle" font-size="14" fill="#333">?</text></svg>'
   );
+  const TM_MERGE_SMALL_FRAC=0.005;
 
   function escHtml(s){
     return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
+
+  const fmtUSD=(n)=> (n==null||isNaN(n)) ? '—'
+    : (Math.abs(n)>=1e9?`$${(n/1e9).toFixed(1)}B`
+    : Math.abs(n)>=1e6?`$${(n/1e6).toFixed(1)}M`
+    : Math.abs(n)>=1e3?`$${(n/1e3).toFixed(1)}K`
+    : `$${Number(n).toFixed(2)}`);
 
   function dexUrl(r){
     if(r.dex?.url) return r.dex.url;
@@ -1290,7 +1297,7 @@
     const items=rowsForTreemap();
     const total=items.reduce((s,r)=>s+r._fdv,0);
     if(total<=0) return [];
-    const thr=total*0.005;
+    const thr=total*TM_MERGE_SMALL_FRAC;
     const big=[], small=[];
     for(const r of items){
       if(r._fdv>=thr) big.push(r);
@@ -1335,6 +1342,15 @@
     return `${c>0?'+':''}${Number(c).toFixed(2)}%`;
   }
 
+  function fmtPrice(n){
+    if(n==null || isNaN(n)) return '—';
+    const v = Number(n);
+    if (v >= 1000) return `$${v.toFixed(0)}`;
+    if (v >= 1) return `$${v.toFixed(2)}`;
+    if (v >= 0.01) return `$${v.toFixed(4)}`;
+    return `$${v.toFixed(8)}`;
+  }
+
   function showTreemapStatus(text,isErr){
     const el=document.getElementById('treemapStatus');
     const canvas=document.getElementById('treemapCanvas');
@@ -1352,13 +1368,18 @@
   }
 
   const TM_TEXT_MIN_SCALE=0.34;
+  const TM_D3_SQUARIFY_RATIO=2.2;
+  const TM_LINE_SHRINK_ITERS=38;
+  const TM_FLEX_SHRINK_ITERS=36;
+  const TM_NAME_TICKER_ITERS=42;
+  const TM_MINI_SHRINK_ITERS=32;
 
   function shrinkTreemapLineToWidth(el,containerW,fs0){
     if(!el||fs0==null||isNaN(fs0)) return;
     let fs=parseFloat(el.style.fontSize);
     if(isNaN(fs)||fs<=0) fs=fs0;
     const base=fs;
-    for(let j=0;j<38;j++){
+    for(let j=0;j<TM_LINE_SHRINK_ITERS;j++){
       if(el.scrollWidth<=containerW+1) break;
       fs=Math.max(3,fs*0.88);
       el.style.fontSize=fs.toFixed(1)+'px';
@@ -1366,79 +1387,79 @@
     }
   }
 
-  function fitTreemapTokenCell(a){
-    const textCol=a.querySelector('.tm-textcol');
-    const nameEl=textCol?.querySelector('.tm-name-side');
-    const tickEl=textCol?.querySelector('.tm-ticker-side');
+  function shrinkTreemapFlexRow(el){
+    const fs0=parseFloat(el.style.fontSize);
+    if(!fs0||isNaN(fs0)) return;
+    let fs=fs0;
+    for(let j=0;j<TM_FLEX_SHRINK_ITERS;j++){
+      if(el.scrollWidth<=el.clientWidth+1) break;
+      fs=Math.max(3,fs*0.88);
+      el.style.fontSize=fs.toFixed(1)+'px';
+      if(fs<=fs0*TM_TEXT_MIN_SCALE) break;
+    }
+  }
+
+  function scaleTreemapNameTickerPair(nameEl,tickEl,maxInnerW){
+    if(!nameEl&&!tickEl) return;
     const nameFs0=nameEl?parseFloat(nameEl.style.fontSize)||0:0;
     const tickFs0=tickEl?parseFloat(tickEl.style.fontSize)||0:0;
     let scale=1;
-    for(let i=0;i<42;i++){
-      if(!textCol) break;
-      const lim=textCol.clientWidth+1;
+    for(let i=0;i<TM_NAME_TICKER_ITERS;i++){
       const nw=nameEl?nameEl.scrollWidth:0;
       const tw=tickEl?tickEl.scrollWidth:0;
-      if(Math.max(nw,tw)<=lim) break;
+      if(Math.max(nw,tw)<=maxInnerW) break;
       scale*=0.9;
       if(nameEl) nameEl.style.fontSize=Math.max(3,Math.round(nameFs0*scale*10)/10)+'px';
       if(tickEl) tickEl.style.fontSize=Math.max(3,Math.round(tickFs0*scale*10)/10)+'px';
       if(scale<TM_TEXT_MIN_SCALE) break;
     }
+  }
 
-    const priceRow=a.querySelector('.tm-pricechg');
-    if(priceRow){
-      const w=priceRow.clientWidth+1;
-      if(priceRow.classList.contains('tm-pricechg--stack')){
-        const pl=priceRow.querySelector('.tm-price-line');
-        const cl=priceRow.querySelector('.tm-chg-line');
-        shrinkTreemapLineToWidth(pl,w,parseFloat(pl?.style.fontSize)||parseFloat(priceRow.style.fontSize)||12);
-        shrinkTreemapLineToWidth(cl,w,parseFloat(cl?.style.fontSize)||parseFloat(priceRow.style.fontSize)||12);
-      }else{
-        const fs0=parseFloat(priceRow.style.fontSize);
-        if(fs0&&!isNaN(fs0)){
-          let fs=fs0;
-          for(let j=0;j<36;j++){
-            if(priceRow.scrollWidth<=priceRow.clientWidth+1) break;
-            fs=Math.max(3,fs*0.88);
-            priceRow.style.fontSize=fs.toFixed(1)+'px';
-            if(fs<=fs0*TM_TEXT_MIN_SCALE) break;
-          }
-        }
-      }
+  function fitTreemapPriceRow(el){
+    if(!el) return;
+    const w=el.clientWidth+1;
+    if(el.classList.contains('tm-pricechg--stack')){
+      el.querySelectorAll('.tm-price-line,.tm-chg-line').forEach(node=>{
+        shrinkTreemapLineToWidth(node,w,parseFloat(node.style.fontSize)||parseFloat(el.style.fontSize)||12);
+      });
+    }else{
+      shrinkTreemapFlexRow(el);
     }
+  }
 
-    const subRow=a.querySelector('.tm-subwrap');
-    if(subRow){
-      const w=subRow.clientWidth+1;
-      if(subRow.classList.contains('tm-subwrap--stack')){
-        subRow.querySelectorAll('.tm-sub-line').forEach(line=>{
-          shrinkTreemapLineToWidth(line,w,parseFloat(line.style.fontSize)||parseFloat(subRow.style.fontSize)||9);
-        });
-      }else{
-        const fs0=parseFloat(subRow.style.fontSize);
-        if(fs0&&!isNaN(fs0)){
-          let fs=fs0;
-          for(let j=0;j<36;j++){
-            if(subRow.scrollWidth<=subRow.clientWidth+1) break;
-            fs=Math.max(3,fs*0.88);
-            subRow.style.fontSize=fs.toFixed(1)+'px';
-            if(fs<=fs0*TM_TEXT_MIN_SCALE) break;
-          }
-        }
-      }
+  function fitTreemapSubRow(el){
+    if(!el) return;
+    const w=el.clientWidth+1;
+    if(el.classList.contains('tm-subwrap--stack')){
+      el.querySelectorAll('.tm-sub-line').forEach(line=>{
+        shrinkTreemapLineToWidth(line,w,parseFloat(line.style.fontSize)||parseFloat(el.style.fontSize)||9);
+      });
+    }else{
+      shrinkTreemapFlexRow(el);
     }
+  }
 
+  function syncTreemapLogoToTextColumn(img,textCol,cellEl){
+    if(!img||!textCol) return;
+    const th=Math.ceil(textCol.getBoundingClientRect().height);
+    const cw=cellEl.clientWidth;
+    const ch=cellEl.clientHeight;
+    const tall=ch>cw;
+    const cap=Math.floor(Math.min(56,cw*(tall?0.54:0.4),Math.min(cw,ch)*0.45));
+    const side=Math.max(10,Math.min(cap,th));
+    img.style.width=side+'px';
+    img.style.height=side+'px';
+  }
+
+  function fitTreemapTokenCell(a){
+    const textCol=a.querySelector('.tm-textcol');
+    const nameEl=textCol?.querySelector('.tm-name-side');
+    const tickEl=textCol?.querySelector('.tm-ticker-side');
+    if(textCol) scaleTreemapNameTickerPair(nameEl,tickEl,textCol.clientWidth+1);
+    fitTreemapPriceRow(a.querySelector('.tm-pricechg'));
+    fitTreemapSubRow(a.querySelector('.tm-subwrap'));
     const img=a.querySelector('.tm-logo-side');
-    if(img&&textCol){
-      const th=Math.ceil(textCol.getBoundingClientRect().height);
-      const cw=a.clientWidth;
-      const ch=a.clientHeight;
-      const tall=ch>cw;
-      const cap=Math.floor(Math.min(56,cw*(tall?0.54:0.4),Math.min(cw,ch)*0.45));
-      const side=Math.max(10,Math.min(cap,th));
-      img.style.width=side+'px';
-      img.style.height=side+'px';
-    }
+    if(img&&textCol) syncTreemapLogoToTextColumn(img,textCol,a);
   }
 
   function fitTreemapMiniCell(a){
@@ -1446,7 +1467,7 @@
     if(!tick) return;
     const fs0=parseFloat(tick.style.fontSize)||7;
     let fs=fs0;
-    for(let i=0;i<32;i++){
+    for(let i=0;i<TM_MINI_SHRINK_ITERS;i++){
       if(tick.scrollWidth<=a.clientWidth-2) break;
       fs=Math.max(3,fs*0.88);
       tick.style.fontSize=fs.toFixed(1)+'px';
@@ -1457,60 +1478,9 @@
   function fitTreemapOtherCell(div){
     const nameEl=div.querySelector('.tm-name-side');
     const tickEl=div.querySelector('.tm-ticker-side');
-    const nameFs0=nameEl?parseFloat(nameEl.style.fontSize)||0:0;
-    const tickFs0=tickEl?parseFloat(tickEl.style.fontSize)||0:0;
-    const innerW=div.clientWidth-2;
-    let scale=1;
-    for(let i=0;i<42;i++){
-      const nw=nameEl?nameEl.scrollWidth:0;
-      const tw=tickEl?tickEl.scrollWidth:0;
-      if(Math.max(nw,tw)<=innerW) break;
-      scale*=0.9;
-      if(nameEl) nameEl.style.fontSize=Math.max(3,Math.round(nameFs0*scale*10)/10)+'px';
-      if(tickEl) tickEl.style.fontSize=Math.max(3,Math.round(tickFs0*scale*10)/10)+'px';
-      if(scale<TM_TEXT_MIN_SCALE) break;
-    }
-    const priceRow=div.querySelector('.tm-pricechg');
-    if(priceRow){
-      const w=priceRow.clientWidth+1;
-      if(priceRow.classList.contains('tm-pricechg--stack')){
-        const pl=priceRow.querySelector('.tm-price-line');
-        const cl=priceRow.querySelector('.tm-chg-line');
-        shrinkTreemapLineToWidth(pl,w,parseFloat(pl?.style.fontSize)||parseFloat(priceRow.style.fontSize)||12);
-        shrinkTreemapLineToWidth(cl,w,parseFloat(cl?.style.fontSize)||parseFloat(priceRow.style.fontSize)||12);
-      }else{
-        const fs0=parseFloat(priceRow.style.fontSize);
-        if(fs0&&!isNaN(fs0)){
-          let fs=fs0;
-          for(let j=0;j<36;j++){
-            if(priceRow.scrollWidth<=priceRow.clientWidth+1) break;
-            fs=Math.max(3,fs*0.88);
-            priceRow.style.fontSize=fs.toFixed(1)+'px';
-            if(fs<=fs0*TM_TEXT_MIN_SCALE) break;
-          }
-        }
-      }
-    }
-    const subRow=div.querySelector('.tm-subwrap');
-    if(subRow){
-      const w=subRow.clientWidth+1;
-      if(subRow.classList.contains('tm-subwrap--stack')){
-        subRow.querySelectorAll('.tm-sub-line').forEach(line=>{
-          shrinkTreemapLineToWidth(line,w,parseFloat(line.style.fontSize)||parseFloat(subRow.style.fontSize)||9);
-        });
-      }else{
-        const fs0=parseFloat(subRow.style.fontSize);
-        if(fs0&&!isNaN(fs0)){
-          let fs=fs0;
-          for(let j=0;j<36;j++){
-            if(subRow.scrollWidth<=subRow.clientWidth+1) break;
-            fs=Math.max(3,fs*0.88);
-            subRow.style.fontSize=fs.toFixed(1)+'px';
-            if(fs<=fs0*TM_TEXT_MIN_SCALE) break;
-          }
-        }
-      }
-    }
+    scaleTreemapNameTickerPair(nameEl,tickEl,div.clientWidth-2);
+    fitTreemapPriceRow(div.querySelector('.tm-pricechg'));
+    fitTreemapSubRow(div.querySelector('.tm-subwrap'));
   }
 
   function runTreemapTextFit(canvas){
@@ -1520,6 +1490,13 @@
       else fitTreemapMiniCell(a);
     });
     canvas.querySelectorAll('.treemap-cell.treemap-other').forEach(fitTreemapOtherCell);
+  }
+
+  function scheduleTreemapTextFit(canvas){
+    if(!canvas) return;
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>runTreemapTextFit(canvas));
+    });
   }
 
   let treemapLayoutRaf=null;
@@ -1559,6 +1536,64 @@
     return{fsTicker,fsName,fsPrice,logoPx,showLogo,showName,showSub,shrink,tallCell,tight};
   }
 
+  function treemapLeafScreenRect(leaf){
+    return{x:leaf.y0,y:leaf.x0,cw:leaf.y1-leaf.y0,ch:leaf.x1-leaf.x0};
+  }
+
+  function applyTreemapCellGeometry(el,rect,bg){
+    el.style.left=rect.x+'px';
+    el.style.top=rect.y+'px';
+    el.style.width=rect.cw+'px';
+    el.style.height=rect.ch+'px';
+    el.style.background=bg;
+  }
+
+  function treemapFdvVolSubHtml(tallCell,subFs,fdvNum,volNum){
+    const fdv=escHtml(`FDV ${fmtUSD(fdvNum)}`);
+    const vol=escHtml(`Vol ${fmtUSD(volNum)}`);
+    if(tallCell){
+      return `<div class="tm-subwrap tm-subwrap--stack">
+        <span class="tm-sub-line" style="font-size:${subFs}px">${fdv}</span>
+        <span class="tm-sub-line" style="font-size:${subFs}px">${vol}</span>
+      </div>`;
+    }
+    return `<div class="tm-subwrap" style="font-size:${subFs}px">
+      <span class="tm-sub-line">${fdv}</span>
+      <span class="tm-sub-line">${vol}</span>
+    </div>`;
+  }
+
+  function treemapOtherSubHtml(ty,minSide,fdv,vol){
+    const subFs=Math.max(4,Math.round(ty.fsName*0.9));
+    if(ty.showSub) return treemapFdvVolSubHtml(ty.tallCell,subFs,fdv,vol);
+    if(minSide>=40){
+      const fs=Math.max(4,Math.round(ty.fsName*0.88));
+      return `<div class="tm-subwrap" style="font-size:${fs}px"><span class="tm-sub-line">${escHtml(fmtUSD(fdv))}</span></div>`;
+    }
+    return '';
+  }
+
+  function treemapPriceChgHtml(tallCell,fsPrice,priceTxt,chgClass,chgTxt){
+    const p=escHtml(priceTxt);
+    const c=escHtml(chgTxt);
+    if(tallCell){
+      return `<div class="tm-pricechg tm-pricechg--stack">
+        <span class="tm-price-line" style="font-size:${fsPrice}px">${p}</span>
+        <span class="tm-chg-line ${chgClass}" style="font-size:${fsPrice}px">${c}</span>
+      </div>`;
+    }
+    return `<div class="tm-pricechg" style="font-size:${fsPrice}px">
+      <span class="tm-price-line">${p}</span>
+      <span class="tm-chg-line ${chgClass}">${c}</span>
+    </div>`;
+  }
+
+  function treemapOtherChgHtml(fsPrice,chgClass,chgTxt){
+    return `<div class="tm-pricechg" style="font-size:${fsPrice}px">
+      <span class="tm-chg-line ${chgClass}">${escHtml(chgTxt)}</span>
+    </div>`;
+  }
+
   function runTreemapLayout(){
     const canvas=document.getElementById('treemapCanvas');
     const wrap=document.getElementById('treemapWrap');
@@ -1593,7 +1628,7 @@
       .sort((a,b)=>(b.value||0)-(a.value||0));
 
     d3.treemap()
-      .tile(d3.treemapSquarify.ratio(2.2))
+      .tile(d3.treemapSquarify.ratio(TM_D3_SQUARIFY_RATIO))
       .size([h,w])
       .paddingOuter(2)
       .paddingInner(2)
@@ -1604,8 +1639,8 @@
 
     for(const leaf of leaves){
       const d=leaf.data;
-      const lx0=leaf.x0,ly0=leaf.y0,lx1=leaf.x1,ly1=leaf.y1;
-      const x0=ly0,y0=lx0,cw=ly1-ly0,ch=lx1-lx0;
+      const box=treemapLeafScreenRect(leaf);
+      const {cw,ch}=box;
       const minSide=Math.min(cw,ch);
       const area=Math.max(1,cw*ch);
       const ty=treemapTypeScale(minSide,area,cw,ch);
@@ -1613,30 +1648,14 @@
       if(d.type==='o'){
         const div=document.createElement('div');
         div.className='treemap-cell treemap-other'+(ty.tight?' treemap-cell--tight':'');
-        div.style.left=x0+'px';
-        div.style.top=y0+'px';
-        div.style.width=cw+'px';
-        div.style.height=ch+'px';
-        div.style.background=heatColor(d.chg);
+        applyTreemapCellGeometry(div,box,heatColor(d.chg));
         if(minSide>=22){
-          const subFs=Math.max(4,Math.round(ty.fsName*0.9));
-          const subLine=ty.showSub
-            ? (ty.tallCell
-              ? `<div class="tm-subwrap tm-subwrap--stack">
-                  <span class="tm-sub-line" style="font-size:${subFs}px">${escHtml(`FDV ${fmtUSD(d.fdv)}`)}</span>
-                  <span class="tm-sub-line" style="font-size:${subFs}px">${escHtml(`Vol ${fmtUSD(d.vol)}`)}</span>
-                </div>`
-              : `<div class="tm-subwrap" style="font-size:${subFs}px">
-                  <span class="tm-sub-line">${escHtml(`FDV ${fmtUSD(d.fdv)}`)}</span>
-                  <span class="tm-sub-line">${escHtml(`Vol ${fmtUSD(d.vol)}`)}</span>
-                </div>`)
-            : (minSide>=40 ? `<div class="tm-subwrap" style="font-size:${Math.max(4,Math.round(ty.fsName*0.88))}px"><span class="tm-sub-line">${escHtml(fmtUSD(d.fdv))}</span></div>` : '');
+          const subLine=treemapOtherSubHtml(ty,minSide,d.fdv,d.vol);
+          const chgCls=tmChgClass(d.chg);
           div.innerHTML=`<div class="tm-stack${ty.tight?' tm-stack--tight':''}">
               <div class="tm-ticker-side" style="font-size:${ty.fsTicker}px">${escHtml('其他')}</div>
               ${minSide>=30?`<div class="tm-name-side" style="font-size:${ty.fsName}px">${escHtml(`${d.count} 个代币`)}</div>`:''}
-              <div class="tm-pricechg" style="font-size:${ty.fsPrice}px">
-                <span class="tm-chg-line ${tmChgClass(d.chg)}">${escHtml(fmtTmChg(d.chg))}</span>
-              </div>
+              ${treemapOtherChgHtml(ty.fsPrice,chgCls,fmtTmChg(d.chg))}
               ${subLine}
             </div>`;
         }else{
@@ -1654,11 +1673,7 @@
       a.href=dexUrl(r);
       a.target='_blank';
       a.rel='noopener noreferrer';
-      a.style.left=x0+'px';
-      a.style.top=y0+'px';
-      a.style.width=cw+'px';
-      a.style.height=ch+'px';
-      a.style.background=heatColor(r._change);
+      applyTreemapCellGeometry(a,box,heatColor(r._change));
 
       const ticker=escHtml(r.dex?.baseSymbol||r.symbol||'—');
       const fullName=r.name||'';
@@ -1686,27 +1701,9 @@
       topInner+='</div>';
 
       const subFs=Math.max(4,Math.round(ty.fsName*0.88));
-      const subLine=ty.showSub
-        ? (tallCell
-          ? `<div class="tm-subwrap tm-subwrap--stack">
-              <span class="tm-sub-line" style="font-size:${subFs}px">${escHtml(`FDV ${fmtUSD(r._fdv)}`)}</span>
-              <span class="tm-sub-line" style="font-size:${subFs}px">${escHtml(`Vol ${fmtUSD(r._volume)}`)}</span>
-            </div>`
-          : `<div class="tm-subwrap" style="font-size:${subFs}px">
-              <span class="tm-sub-line">${escHtml(`FDV ${fmtUSD(r._fdv)}`)}</span>
-              <span class="tm-sub-line">${escHtml(`Vol ${fmtUSD(r._volume)}`)}</span>
-            </div>`)
-        : '';
-
-      const priceHtml=tallCell
-        ? `<div class="tm-pricechg tm-pricechg--stack">
-            <span class="tm-price-line" style="font-size:${ty.fsPrice}px">${escHtml(fmtPrice(r._price))}</span>
-            <span class="tm-chg-line ${tmChgClass(r._change)}" style="font-size:${ty.fsPrice}px">${escHtml(fmtTmChg(r._change))}</span>
-          </div>`
-        : `<div class="tm-pricechg" style="font-size:${ty.fsPrice}px">
-            <span class="tm-price-line">${escHtml(fmtPrice(r._price))}</span>
-            <span class="tm-chg-line ${tmChgClass(r._change)}">${escHtml(fmtTmChg(r._change))}</span>
-          </div>`;
+      const subLine=ty.showSub?treemapFdvVolSubHtml(tallCell,subFs,r._fdv,r._volume):'';
+      const chgCls=tmChgClass(r._change);
+      const priceHtml=treemapPriceChgHtml(tallCell,ty.fsPrice,fmtPrice(r._price),chgCls,fmtTmChg(r._change));
 
       a.innerHTML=`<div class="tm-stack${ty.tight?' tm-stack--tight':''}">
           <div class="${topClass}">${topInner}</div>
@@ -1725,9 +1722,7 @@
       canvas.appendChild(a);
     }
 
-    requestAnimationFrame(()=>{
-      requestAnimationFrame(()=>runTreemapTextFit(canvas));
-    });
+    scheduleTreemapTextFit(canvas);
   }
 
   function applyView(){
@@ -1742,21 +1737,6 @@
     }
     updateLayout();
     render();
-  }
-
-  const fmtUSD=(n)=> (n==null||isNaN(n)) ? '—'
-    : (Math.abs(n)>=1e9?`$${(n/1e9).toFixed(1)}B`
-    : Math.abs(n)>=1e6?`$${(n/1e6).toFixed(1)}M`
-    : Math.abs(n)>=1e3?`$${(n/1e3).toFixed(1)}K`
-    : `$${Number(n).toFixed(2)}`);
-
-  function fmtPrice(n){
-    if(n==null || isNaN(n)) return '—';
-    const v = Number(n);
-    if (v >= 1000) return `$${v.toFixed(0)}`;
-    if (v >= 1) return `$${v.toFixed(2)}`;
-    if (v >= 0.01) return `$${v.toFixed(4)}`;
-    return `$${v.toFixed(8)}`;
   }
 
   function daysFrom(ms){
