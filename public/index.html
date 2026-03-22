@@ -534,30 +534,54 @@
     flex-direction:column;
     align-items:center;
     justify-content:center;
-    gap:0.2em;
+    gap:0.28em;
     max-width:100%;
     min-width:0;
     width:100%;
   }
-  .tm-logo-center{
+  .tm-toprow{
+    display:flex;
+    flex-direction:row;
+    align-items:center;
+    justify-content:center;
+    gap:max(4px,0.35em);
+    max-width:100%;
+    min-width:0;
+  }
+  .tm-toprow--solo .tm-textcol{
+    align-items:center;
+    text-align:center;
+  }
+  .tm-logo-side{
     border-radius:8px;
     object-fit:cover;
     border:1px solid rgba(255,255,255,.3);
     flex-shrink:0;
   }
-  .tm-name-center{
-    font-weight:500;
-    line-height:1.15;
-    opacity:.95;
+  .tm-textcol{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    justify-content:center;
+    gap:0.08em;
+    min-width:0;
+    flex:1 1 auto;
     max-width:100%;
+    text-align:left;
+  }
+  .tm-name-side{
+    font-weight:500;
+    line-height:1.12;
+    opacity:.95;
+    width:100%;
     overflow:hidden;
     text-overflow:ellipsis;
     white-space:nowrap;
   }
-  .tm-ticker-center{
+  .tm-ticker-side{
     font-weight:700;
-    line-height:1.1;
-    max-width:100%;
+    line-height:1.08;
+    width:100%;
     overflow:hidden;
     text-overflow:ellipsis;
     white-space:nowrap;
@@ -573,7 +597,7 @@
     max-width:100%;
   }
   .tm-sub{
-    margin-top:0.15em;
+    margin-top:0.08em;
     opacity:.82;
     font-weight:500;
     line-height:1.2;
@@ -581,6 +605,7 @@
     overflow:hidden;
     text-overflow:ellipsis;
     white-space:nowrap;
+    text-align:center;
   }
   .tm-chg-up{color:#b8ff7a}
   .tm-chg-down{color:#ffb4a8}
@@ -1278,16 +1303,18 @@
   }
 
   function treemapTypeScale(minSide,area){
-    const baseFs=Math.max(8,Math.min(26,Math.sqrt(Math.max(1,area))/4.6));
-    return{
-      fsTicker:Math.round(Math.min(28,baseFs*1.2)),
-      fsName:Math.round(Math.max(9,baseFs*0.62)),
-      fsPrice:Math.round(Math.max(9,baseFs*0.78)),
-      logoPx:Math.round(Math.min(60,Math.max(22,minSide*0.34))),
-      showLogo:minSide>=36,
-      showName:minSide>=30,
-      showSub:minSide>=72
-    };
+    const geom=Math.min(minSide/68,Math.sqrt(Math.max(1,area))/50,1);
+    const shrink=Math.max(0.36,geom);
+    const rawBase=Math.sqrt(Math.max(1,area))/4.6;
+    const baseFs=Math.max(6,Math.min(24,rawBase*shrink));
+    const fsTicker=Math.round(Math.min(26,Math.max(7,baseFs*1.16)));
+    const fsName=Math.round(Math.max(6,Math.min(fsTicker-1,baseFs*0.58)));
+    const fsPrice=Math.round(Math.max(6,Math.min(fsTicker,baseFs*0.72)));
+    const logoPx=Math.round(Math.min(54,Math.max(14,minSide*0.3*Math.max(0.55,shrink))));
+    const showLogo=minSide>=42&&area>=2000&&shrink>=0.5;
+    const showName=minSide>=24;
+    const showSub=minSide>=56&&area>=2800;
+    return{fsTicker,fsName,fsPrice,logoPx,showLogo,showName,showSub,shrink};
   }
 
   function runTreemapLayout(){
@@ -1332,7 +1359,6 @@
       (root);
 
     const leaves=root.leaves();
-    const total=root.value||1;
 
     for(const leaf of leaves){
       const d=leaf.data;
@@ -1350,19 +1376,18 @@
         div.style.width=cw+'px';
         div.style.height=ch+'px';
         div.style.background=heatColor(d.chg);
-        const pct=((d.fdv/total)*100).toFixed(1);
-        if(minSide>=26){
+        if(minSide>=22){
           const subLine=ty.showSub
-            ? `<div class="tm-sub" style="font-size:${Math.max(8,Math.round(ty.fsName*0.88))}px">${escHtml(`FDV ${fmtUSD(d.fdv)} · Vol ${fmtUSD(d.vol)} · ${pct}%`)}</div>`
-            : (minSide>=44 ? `<div class="tm-sub" style="font-size:${Math.max(8,Math.round(ty.fsName*0.85))}px">${escHtml(`${fmtUSD(d.fdv)} · ${pct}%`)}</div>` : '');
+            ? `<div class="tm-sub" style="font-size:${Math.max(7,Math.round(ty.fsName*0.9))}px">${escHtml(`FDV ${fmtUSD(d.fdv)} · Vol ${fmtUSD(d.vol)}`)}</div>`
+            : (minSide>=40 ? `<div class="tm-sub" style="font-size:${Math.max(7,Math.round(ty.fsName*0.88))}px">${escHtml(fmtUSD(d.fdv))}</div>` : '');
           div.innerHTML=`<div class="tm-stack">
-              <div class="tm-ticker-center" style="font-size:${ty.fsTicker}px">${escHtml('其他')}</div>
-              ${minSide>=36?`<div class="tm-name-center" style="font-size:${ty.fsName}px">${escHtml(`${d.count} 个代币`)}</div>`:''}
+              <div class="tm-ticker-side" style="font-size:${ty.fsTicker}px">${escHtml('其他')}</div>
+              ${minSide>=30?`<div class="tm-name-side" style="font-size:${ty.fsName}px">${escHtml(`${d.count} 个代币`)}</div>`:''}
               <div class="tm-pricechg" style="font-size:${ty.fsPrice}px"><span class="${tmChgClass(d.chg)}">${escHtml(fmtTmChg(d.chg))}</span></div>
               ${subLine}
             </div>`;
         }else{
-          div.innerHTML=`<div class="tm-stack"><div class="tm-ticker-center" style="font-size:${Math.max(7,Math.round(minSide*0.42))}px">${escHtml('其他')}</div></div>`;
+          div.innerHTML=`<div class="tm-stack"><div class="tm-ticker-side" style="font-size:${Math.max(6,Math.round(minSide*0.4))}px">${escHtml('其他')}</div></div>`;
         }
         canvas.appendChild(div);
         continue;
@@ -1387,27 +1412,33 @@
       const shortName=fullName.length>34?fullName.slice(0,34)+'…':fullName;
       a.title=fullName||undefined;
 
-      if(minSide<24){
-        a.innerHTML=`<div class="tm-stack"><div class="tm-ticker-center" style="font-size:${Math.max(7,Math.round(minSide*0.38))}px">${ticker}</div></div>`;
+      if(minSide<18){
+        a.innerHTML=`<div class="tm-stack"><div class="tm-ticker-side" style="font-size:${Math.max(6,Math.round(minSide*0.42))}px">${ticker}</div></div>`;
         canvas.appendChild(a);
         continue;
       }
 
-      const bits=[];
-      if(ty.showLogo){
-        bits.push('<img class="tm-logo-center" alt="">');
-      }
+      const topClass=ty.showLogo?'tm-toprow':'tm-toprow tm-toprow--solo';
+      let topInner='';
+      if(ty.showLogo) topInner+='<img class="tm-logo-side" alt="">';
+      topInner+='<div class="tm-textcol">';
       if(ty.showName){
-        bits.push(`<div class="tm-name-center" style="font-size:${ty.fsName}px">${escHtml(shortName||'—')}</div>`);
+        topInner+=`<div class="tm-name-side" style="font-size:${ty.fsName}px">${escHtml(shortName||'—')}</div>`;
       }
-      bits.push(`<div class="tm-ticker-center" style="font-size:${ty.fsTicker}px">${ticker}</div>`);
-      bits.push(`<div class="tm-pricechg" style="font-size:${ty.fsPrice}px"><span>${escHtml(fmtPrice(r._price))}</span><span class="${tmChgClass(r._change)}">${escHtml(fmtTmChg(r._change))}</span></div>`);
-      if(ty.showSub){
-        bits.push(`<div class="tm-sub" style="font-size:${Math.max(8,Math.round(ty.fsName*0.88))}px">${escHtml(`FDV ${fmtUSD(r._fdv)} · Vol ${fmtUSD(r._volume)} · ${((r._fdv/total)*100).toFixed(1)}%`)}</div>`);
-      }
-      a.innerHTML=`<div class="tm-stack">${bits.join('')}</div>`;
+      topInner+=`<div class="tm-ticker-side" style="font-size:${ty.fsTicker}px">${ticker}</div>`;
+      topInner+='</div>';
 
-      const im=a.querySelector('.tm-logo-center');
+      const subLine=ty.showSub
+        ? `<div class="tm-sub" style="font-size:${Math.max(7,Math.round(ty.fsName*0.88))}px">${escHtml(`FDV ${fmtUSD(r._fdv)} · Vol ${fmtUSD(r._volume)}`)}</div>`
+        : '';
+
+      a.innerHTML=`<div class="tm-stack">
+          <div class="${topClass}">${topInner}</div>
+          <div class="tm-pricechg" style="font-size:${ty.fsPrice}px"><span>${escHtml(fmtPrice(r._price))}</span><span class="${tmChgClass(r._change)}">${escHtml(fmtTmChg(r._change))}</span></div>
+          ${subLine}
+        </div>`;
+
+      const im=a.querySelector('.tm-logo-side');
       if(im){
         im.style.width=ty.logoPx+'px';
         im.style.height=ty.logoPx+'px';
