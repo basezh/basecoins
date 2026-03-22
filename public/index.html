@@ -8,6 +8,7 @@
       href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🟦</text></svg>">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <style>
   :root{
     --blue:#0000ff;
@@ -130,6 +131,12 @@
     background:var(--btn-hover);
     color:var(--text);
     border-color:#3b63ff;
+  }
+  button.title-map-link{
+    font:inherit;
+    font-size:12px;
+    cursor:pointer;
+    margin:0;
   }
 
   .base-logo{
@@ -269,6 +276,16 @@
     min-height:260px;
     height:var(--panel-height,60vh);
     margin-bottom:var(--panel-footer-gap);
+  }
+
+  .panel-view{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+  }
+  .panel-view[hidden]{
+    display:none !important;
   }
 
   .table-scroll{
@@ -468,6 +485,88 @@
 
   a.link{text-decoration:none;font-weight:600}
   a.link:hover{text-decoration:underline}
+
+  .treemap-wrap{
+    flex:1;
+    min-height:0;
+    position:relative;
+    padding:4px;
+  }
+  .treemap-canvas{
+    position:absolute;
+    inset:4px;
+  }
+  .treemap-cell{
+    position:absolute;
+    overflow:hidden;
+    border-radius:6px;
+    border:1px solid rgba(0,0,0,.35);
+    text-decoration:none;
+    color:#fff;
+    display:flex;
+    flex-direction:column;
+    box-sizing:border-box;
+    padding:6px;
+    text-shadow:0 1px 3px rgba(0,0,0,.85);
+    transition:filter .12s, box-shadow .12s;
+  }
+  .theme-light .treemap-cell{
+    border-color:rgba(0,0,0,.12);
+    text-shadow:0 1px 2px rgba(0,0,0,.55);
+  }
+  .treemap-cell:hover{
+    filter:brightness(1.07);
+    z-index:5;
+    box-shadow:0 0 0 2px rgba(59,99,255,.55);
+  }
+  .treemap-cell.treemap-other{
+    cursor:default;
+  }
+  .treemap-cell.treemap-other:hover{
+    filter:none;
+    box-shadow:none;
+  }
+  .tm-row{display:flex;align-items:center;gap:6px;min-width:0}
+  .tm-logo{
+    border-radius:6px;
+    object-fit:cover;
+    border:1px solid rgba(255,255,255,.25);
+    flex-shrink:0;
+  }
+  .tm-head{min-width:0;flex:1}
+  .tm-ticker{
+    font-weight:700;
+    line-height:1.1;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .tm-name{
+    opacity:.92;
+    line-height:1.15;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .tm-meta{
+    margin-top:auto;
+    display:flex;
+    flex-direction:column;
+    gap:1px;
+    line-height:1.2;
+    opacity:.95;
+  }
+  .tm-line{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tm-chg-up{color:#b8ff7a}
+  .tm-chg-down{color:#ffb4a8}
+  .tm-chg-flat{color:#e8e8ee}
+  .treemap-status-msg{
+    padding:24px;
+    color:var(--muted);
+    text-align:center;
+    font-size:15px;
+  }
+  .treemap-status-msg.err{color:var(--red)}
   :focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:8px}
 
   .footer{
@@ -750,7 +849,8 @@
 
     .title-text{font-size:18px}
     .base-logo svg{height:18px}
-    .title-map-link{font-size:10px;padding:4px 8px}
+    .title-map-link,
+    button.title-map-link{font-size:10px;padding:4px 8px}
 
     #catChips .chip{
       width:36px;
@@ -793,7 +893,7 @@
         <svg width="36" height="12" viewBox="0 0 668 219" xmlns="http://www.w3.org/2000/svg"><path d="M171.459 75.1071C171.459 70.9 171.459 68.7965 172.251 67.1784C173.008 65.6291 174.258 64.3763 175.805 63.6173C177.419 62.8246 179.519 62.8246 183.718 62.8246H314.37C318.569 62.8246 320.668 62.8246 322.283 63.6173C323.829 64.3763 325.08 65.6291 325.837 67.1784C326.628 68.7965 326.628 70.9 326.628 75.1071V206.017C326.628 210.224 326.628 212.327 325.837 213.945C325.08 215.495 323.829 216.747 322.283 217.506C320.668 218.299 318.569 218.299 314.37 218.299H183.718C179.519 218.299 177.419 218.299 175.805 217.506C174.258 216.747 173.008 215.495 172.251 213.945C171.459 212.327 171.459 210.224 171.459 206.017V75.1071Z" fill="currentColor"/><path d="M342.145 75.1071C342.145 70.9 342.145 68.7965 342.936 67.1784C343.694 65.6291 344.944 64.3763 346.491 63.6173C348.105 62.8246 350.205 62.8246 354.404 62.8246H485.056C489.255 62.8246 491.354 62.8246 492.969 63.6173C494.515 64.3763 495.766 65.6291 496.523 67.1784C497.314 68.7965 497.314 70.9 497.314 75.1071V206.017C497.314 210.224 497.314 212.327 496.523 213.945C495.766 215.495 494.515 216.747 492.969 217.506C491.354 218.299 489.255 218.299 485.056 218.299H354.404C350.205 218.299 348.105 218.299 346.491 217.506C344.944 216.747 343.694 215.495 342.936 213.945C342.145 212.327 342.145 210.224 342.145 206.017V75.1071Z" fill="currentColor"/><path d="M512.831 75.1071C512.831 70.9 512.831 68.7965 513.622 67.1784C514.38 65.6291 515.63 64.3763 517.176 63.6173C518.791 62.8246 520.891 62.8246 525.09 62.8246H655.742C659.941 62.8246 662.04 62.8246 663.655 63.6173C665.201 64.3763 666.452 65.6291 667.209 67.1784C668 68.7965 668 70.9 668 75.1071V206.017C668 210.224 668 212.327 667.209 213.945C666.452 215.495 665.201 216.747 663.655 217.506C662.04 218.299 659.941 218.299 655.742 218.299H525.09C520.891 218.299 518.791 218.299 517.176 217.506C515.63 216.747 514.38 215.495 513.622 213.945C512.831 212.327 512.831 210.224 512.831 206.017V75.1071Z" fill="currentColor"/><path d="M1.56459 4.98853C0.773438 6.60664 0.773438 8.71018 0.773438 12.9173V206.017C0.773438 210.224 0.773438 212.327 1.56459 213.945C2.32208 215.495 3.57241 216.747 5.11864 217.506C6.73358 218.299 8.83298 218.299 13.0318 218.299H143.684C147.883 218.299 149.982 218.299 151.597 217.506C153.143 216.747 154.394 215.495 155.151 213.945C155.942 212.327 155.942 210.224 155.942 206.017V75.1071C155.942 70.9 155.942 68.7965 155.151 67.1784C154.394 65.6291 153.143 64.3763 151.597 63.6173C149.982 62.8246 147.883 62.8246 143.684 62.8246H75.0994C70.9006 62.8246 68.8012 62.8246 67.1862 62.0319C65.64 61.2729 64.3897 60.0201 63.6322 58.4708C62.841 56.8527 62.841 54.7492 62.841 50.5421V12.9173C62.841 8.71018 62.841 6.60664 62.0499 4.98853C61.2924 3.43925 60.0421 2.18646 58.4958 1.42747C56.8809 0.634766 54.7815 0.634766 50.5827 0.634766H13.0318C8.83298 0.634766 6.73358 0.634766 5.11864 1.42747C3.57241 2.18646 2.32208 3.43925 1.56459 4.98853Z" fill="currentColor"/></svg>
       </span>
       <div class="title-text">coin.best&nbsp;&nbsp;&nbsp;#TRENDING</div>
-      <a class="title-map-link" href="/treemap.html">市值占比</a>
+      <button type="button" class="title-map-link" id="viewToggle" aria-label="切换到市值占比视图">市值占比</button>
     </div>
     <div class="theme-toggle">
       <button id="themeSwitch" class="switch" type="button" role="switch" aria-checked="false" aria-label="切换到浅色主题">
@@ -840,28 +940,36 @@
 
   <div class="content" id="content">
     <div class="panel" id="panel">
-      <div class="table-scroll">
-        <div class="table-inner">
-          <div class="thead desktop" id="theadDesktop">
-            <div>Rank</div>
-            <div>Token</div>
-            <div>Price</div>
-            <div class="th-sort" data-sort="change">Change <span class="arrow" id="arrow-change-desktop"></span></div>
-            <div class="th-sort" data-sort="volume">Volume <span class="arrow" id="arrow-volume-desktop">▼</span></div>
-            <div class="th-sort" data-sort="fdv">FDV <span class="arrow" id="arrow-fdv-desktop"></span></div>
-            <div class="th-sort" data-sort="age">Age <span class="arrow" id="arrow-age-desktop"></span></div>
-          </div>
+      <div class="panel-view" id="tablePanel">
+        <div class="table-scroll">
+          <div class="table-inner">
+            <div class="thead desktop" id="theadDesktop">
+              <div>Rank</div>
+              <div>Token</div>
+              <div>Price</div>
+              <div class="th-sort" data-sort="change">Change <span class="arrow" id="arrow-change-desktop"></span></div>
+              <div class="th-sort" data-sort="volume">Volume <span class="arrow" id="arrow-volume-desktop">▼</span></div>
+              <div class="th-sort" data-sort="fdv">FDV <span class="arrow" id="arrow-fdv-desktop"></span></div>
+              <div class="th-sort" data-sort="age">Age <span class="arrow" id="arrow-age-desktop"></span></div>
+            </div>
 
-          <div class="thead mobile" id="theadMobile" style="display:none;">
-            <div>Rank</div>
-            <div>Token</div>
-            <div class="th-sort" data-sort="change">Price ± <span class="arrow" id="arrow-change-mobile"></span></div>
-            <div class="th-sort" data-sort="volume">Volume <span class="arrow" id="arrow-volume-mobile">▼</span></div>
-            <div class="th-sort" data-sort="fdv">FDV <span class="arrow" id="arrow-fdv-mobile"></span></div>
-            <div class="th-sort" data-sort="age">Age <span class="arrow" id="arrow-age-mobile"></span></div>
-          </div>
+            <div class="thead mobile" id="theadMobile" style="display:none;">
+              <div>Rank</div>
+              <div>Token</div>
+              <div class="th-sort" data-sort="change">Price ± <span class="arrow" id="arrow-change-mobile"></span></div>
+              <div class="th-sort" data-sort="volume">Volume <span class="arrow" id="arrow-volume-mobile">▼</span></div>
+              <div class="th-sort" data-sort="fdv">FDV <span class="arrow" id="arrow-fdv-mobile"></span></div>
+              <div class="th-sort" data-sort="age">Age <span class="arrow" id="arrow-age-mobile"></span></div>
+            </div>
 
-          <div class="rows" id="rows"></div>
+            <div class="rows" id="rows"></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel-view" id="treemapPanel" hidden>
+        <div class="treemap-wrap" id="treemapWrap">
+          <div class="treemap-canvas" id="treemapCanvas"></div>
+          <div class="treemap-status-msg" id="treemapStatus" style="display:none"></div>
         </div>
       </div>
     </div>
@@ -932,7 +1040,10 @@
   themeSwitch.addEventListener('click',()=>{
     const isLight=document.documentElement.classList.toggle('theme-light');
     applyTheme(isLight?'light':'dark');
-    requestAnimationFrame(updateLayout);
+    requestAnimationFrame(()=>{
+      updateLayout();
+      layoutTreemap();
+    });
   });
 
   (function(){
@@ -988,6 +1099,11 @@
   }
 
   function updateHeaderVisibility(){
+    if(state.view!=='table'){
+      document.getElementById('theadDesktop').style.display='none';
+      document.getElementById('theadMobile').style.display='none';
+      return;
+    }
     document.getElementById('theadDesktop').style.display = isMobile() ? 'none' : 'grid';
     document.getElementById('theadMobile').style.display = isMobile() ? 'grid' : 'none';
   }
@@ -1001,6 +1117,7 @@
       render();
     }
     updateLayout();
+    layoutTreemap();
   });
 
   window.addEventListener('load', updateLayout);
@@ -1010,6 +1127,8 @@
     ro.observe(headerEl);
     ro.observe(topbarEl);
     ro.observe(footerEl);
+    const tw=document.getElementById('treemapWrap');
+    if(tw) new ResizeObserver(()=>layoutTreemap()).observe(tw);
   }
 
   const ICONS={
@@ -1025,9 +1144,278 @@
   const state={
     category:'all',
     window:'24h',
+    view:'table',
     rows:[],
     sort:{key:'volume',dir:'desc'}
   };
+
+  const TM_PLACEHOLDER='data:image/svg+xml,'+encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="#ccc"/><text x="50%" y="55%" text-anchor="middle" font-size="14" fill="#333">?</text></svg>'
+  );
+
+  function escHtml(s){
+    return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function dexUrl(r){
+    if(r.dex?.url) return r.dex.url;
+    if(r.address) return `https://dexscreener.com/base/${r.address}`;
+    return '#';
+  }
+
+  function mapRowForWin(r){
+    const win=state.window;
+    const price=r.dex?.price??null;
+    const change=win==='1h'?r.dex?.chg1h:(win==='6h'?r.dex?.chg6h:r.dex?.chg24h);
+    const volume=win==='1h'?r.dex?.vol1h:(win==='6h'?r.dex?.vol6h:r.dex?.vol24h);
+    const fdv=r.dex?.fdv??null;
+    return {...r,_price:price,_change:change,_volume:volume??0,_fdv:fdv};
+  }
+
+  function rowsForTreemap(){
+    const filtered=state.rows.filter(r=>state.category==='all'?true:r.source===state.category);
+    return filtered.map(mapRowForWin).filter(r=>r._fdv!=null&&r._fdv>0);
+  }
+
+  function buildTreemapNodes(){
+    const items=rowsForTreemap();
+    const total=items.reduce((s,r)=>s+r._fdv,0);
+    if(total<=0) return [];
+    const thr=total*0.01;
+    const big=[], small=[];
+    for(const r of items){
+      if(r._fdv>=thr) big.push(r);
+      else small.push(r);
+    }
+    const wrapped=big.map(row=>({type:'t',row}));
+    if(small.length){
+      const sumFdv=small.reduce((s,r)=>s+r._fdv,0);
+      const sumVol=small.reduce((s,r)=>s+(r._volume||0),0);
+      let w=0, sumC=0;
+      for(const r of small){
+        const c=r._change;
+        if(c!=null&&!isNaN(c)){
+          sumC+=c*r._fdv;
+          w+=r._fdv;
+        }
+      }
+      const avgChg=w>0?sumC/w:null;
+      wrapped.push({type:'o',fdv:sumFdv,vol:sumVol,chg:avgChg,count:small.length});
+    }
+    return wrapped;
+  }
+
+  function heatColor(pct){
+    if(pct==null||isNaN(pct)) return 'rgb(72,74,82)';
+    const p=Math.max(-20,Math.min(20,pct))/20;
+    if(p>=0){
+      const t=p;
+      return `rgb(${Math.round(18+25*(1-t))},${Math.round(95+75*t)},${Math.round(32+28*t)})`;
+    }
+    const t=-p;
+    return `rgb(${Math.min(255,Math.round(180+60*t))},${Math.max(18,Math.round(45-25*t))},${Math.max(22,Math.round(38-18*t))})`;
+  }
+
+  function tmChgClass(c){
+    if(c==null||isNaN(c)) return 'tm-chg-flat';
+    return c>=0?'tm-chg-up':'tm-chg-down';
+  }
+
+  function fmtTmChg(c){
+    if(c==null||isNaN(c)) return '—';
+    return `${c>0?'+':''}${Number(c).toFixed(2)}%`;
+  }
+
+  function showTreemapStatus(text,isErr){
+    const el=document.getElementById('treemapStatus');
+    const canvas=document.getElementById('treemapCanvas');
+    if(!el||!canvas) return;
+    if(!text){
+      el.style.display='none';
+      el.textContent='';
+      canvas.style.display='';
+      return;
+    }
+    el.style.display='block';
+    el.textContent=text;
+    el.className='treemap-status-msg'+(isErr?' err':'');
+    canvas.style.display='none';
+  }
+
+  let treemapLayoutRaf=null;
+  function layoutTreemap(){
+    if(state.view!=='treemap') return;
+    if(treemapLayoutRaf) cancelAnimationFrame(treemapLayoutRaf);
+    treemapLayoutRaf=requestAnimationFrame(()=>{
+      treemapLayoutRaf=null;
+      runTreemapLayout();
+    });
+  }
+
+  function runTreemapLayout(){
+    const canvas=document.getElementById('treemapCanvas');
+    const wrap=document.getElementById('treemapWrap');
+    if(!canvas||!wrap||typeof d3==='undefined') return;
+
+    canvas.innerHTML='';
+
+    if(!state.rows.length){
+      showTreemapStatus('加载中…',false);
+      return;
+    }
+
+    const nodes=buildTreemapNodes();
+    if(!nodes.length){
+      showTreemapStatus('当前分类下没有有效 FDV 数据，无法绘制占比图。',false);
+      return;
+    }
+    showTreemapStatus('',false);
+
+    const w=Math.max(200,wrap.clientWidth-8);
+    const h=Math.max(260,Math.floor(wrap.clientHeight-8));
+    canvas.style.width=w+'px';
+    canvas.style.height=h+'px';
+
+    const root=d3.hierarchy({children:nodes},d=>d.children)
+      .sum(d=>{
+        if(!d||d.children) return 0;
+        if(d.type==='t') return Math.max(0,d.row._fdv||0);
+        if(d.type==='o') return Math.max(0,d.fdv||0);
+        return 0;
+      })
+      .sort((a,b)=>(b.value||0)-(a.value||0));
+
+    d3.treemap()
+      .tile(d3.treemapSquarify)
+      .size([w,h])
+      .paddingOuter(2)
+      .paddingInner(2)
+      .round(true)
+      (root);
+
+    const leaves=root.leaves();
+    const total=root.value||1;
+
+    for(const leaf of leaves){
+      const d=leaf.data;
+      const x0=leaf.x0,y0=leaf.y0,x1=leaf.x1,y1=leaf.y1;
+      const cw=x1-x0,ch=y1-y0;
+      const minSide=Math.min(cw,ch);
+      const area=Math.max(1,cw*ch);
+      const baseFs=Math.max(7,Math.min(15,Math.sqrt(area)/9));
+
+      if(d.type==='o'){
+        const div=document.createElement('div');
+        div.className='treemap-cell treemap-other';
+        div.style.left=x0+'px';
+        div.style.top=y0+'px';
+        div.style.width=cw+'px';
+        div.style.height=ch+'px';
+        div.style.background=heatColor(d.chg);
+        div.style.fontSize=baseFs+'px';
+        const pct=((d.fdv/total)*100).toFixed(1);
+        if(minSide>=64){
+          div.innerHTML=`<div class="tm-ticker" style="font-size:${baseFs+3}px">${escHtml('其他')}</div>
+            <div class="tm-name" style="font-size:${Math.max(7,baseFs-1)}px">${escHtml(`${d.count} 个代币`)}</div>
+            <div class="tm-meta" style="font-size:${Math.max(7,baseFs-1)}px">
+              <div class="tm-line"><span class="${tmChgClass(d.chg)}">${escHtml(fmtTmChg(d.chg))}</span> · 加权涨跌</div>
+              <div class="tm-line">FDV ${escHtml(fmtUSD(d.fdv))} · Vol ${escHtml(fmtUSD(d.vol))}</div>
+              <div class="tm-line" style="opacity:.85">${escHtml(pct)}% of view</div>
+            </div>`;
+        }else if(minSide>=40){
+          div.innerHTML=`<div class="tm-ticker" style="font-size:${baseFs+2}px">${escHtml('其他')}</div>
+            <div class="tm-line ${tmChgClass(d.chg)}" style="font-size:${baseFs}px;margin-top:4px">${escHtml(fmtTmChg(d.chg))}</div>
+            <div class="tm-line" style="font-size:${Math.max(7,baseFs-1)}px">${escHtml(fmtUSD(d.fdv))}</div>`;
+        }else{
+          div.innerHTML=`<div class="tm-ticker" style="font-size:${Math.max(7,baseFs)}px">${escHtml('其他')}</div>`;
+        }
+        canvas.appendChild(div);
+        continue;
+      }
+
+      const r=d.row;
+      if(!r) continue;
+
+      const a=document.createElement('a');
+      a.className='treemap-cell';
+      a.href=dexUrl(r);
+      a.target='_blank';
+      a.rel='noopener noreferrer';
+      a.style.left=x0+'px';
+      a.style.top=y0+'px';
+      a.style.width=cw+'px';
+      a.style.height=ch+'px';
+      a.style.background=heatColor(r._change);
+      a.style.fontSize=baseFs+'px';
+
+      const ticker=escHtml(r.dex?.baseSymbol||r.symbol||'—');
+      const fullName=r.name||'';
+      const shortName=fullName.length>28?fullName.slice(0,28)+'…':fullName;
+
+      if(minSide>=88){
+        const logoPx=Math.min(28,Math.max(18,minSide/4));
+        a.innerHTML=`<div class="tm-row">
+            <img class="tm-logo" alt="" width="22" height="22">
+            <div class="tm-head">
+              <div class="tm-ticker" style="font-size:${baseFs+3}px">${ticker}</div>
+              <div class="tm-name" style="font-size:${Math.max(7,baseFs-1)}px">${escHtml(shortName||'—')}</div>
+            </div>
+          </div>
+          <div class="tm-meta" style="font-size:${Math.max(7,baseFs-1)}px">
+            <div class="tm-line">${escHtml(fmtPrice(r._price))} · <span class="${tmChgClass(r._change)}">${escHtml(fmtTmChg(r._change))}</span></div>
+            <div class="tm-line">FDV ${escHtml(fmtUSD(r._fdv))} · Vol ${escHtml(fmtUSD(r._volume))}</div>
+            <div class="tm-line" style="opacity:.85">${escHtml(((r._fdv/total)*100).toFixed(1))}% of view</div>
+          </div>`;
+        const im=a.querySelector('.tm-logo');
+        if(im){
+          im.style.width=logoPx+'px';
+          im.style.height=logoPx+'px';
+          im.src=r.dex?.image||TM_PLACEHOLDER;
+          im.onerror=()=>{im.onerror=null;im.src=TM_PLACEHOLDER;};
+        }
+      }else if(minSide>=52){
+        const logoPx=Math.max(14,minSide/3.5);
+        a.innerHTML=`<div class="tm-row">
+            <img class="tm-logo" alt="">
+            <div class="tm-head">
+              <div class="tm-ticker" style="font-size:${baseFs+2}px">${ticker}</div>
+            </div>
+          </div>
+          <div class="tm-meta" style="font-size:${Math.max(7,baseFs-1)}px;margin-top:4px">
+            <div class="tm-line"><span class="${tmChgClass(r._change)}">${escHtml(fmtTmChg(r._change))}</span></div>
+            <div class="tm-line">${escHtml(fmtUSD(r._fdv))}</div>
+          </div>`;
+        const im=a.querySelector('.tm-logo');
+        if(im){
+          im.style.width=logoPx+'px';
+          im.style.height=logoPx+'px';
+          im.src=r.dex?.image||TM_PLACEHOLDER;
+          im.onerror=()=>{im.onerror=null;im.src=TM_PLACEHOLDER;};
+        }
+      }else if(minSide>=34){
+        a.innerHTML=`<div class="tm-ticker" style="font-size:${baseFs+1}px">${ticker}</div>
+          <div class="tm-line ${tmChgClass(r._change)}" style="font-size:${baseFs}px;margin-top:2px">${escHtml(fmtTmChg(r._change))}</div>`;
+      }else{
+        a.innerHTML=`<div class="tm-ticker" style="font-size:${Math.max(7,baseFs)}px">${ticker}</div>`;
+      }
+
+      canvas.appendChild(a);
+    }
+  }
+
+  function applyView(){
+    const tablePanel=document.getElementById('tablePanel');
+    const treemapPanel=document.getElementById('treemapPanel');
+    const btn=document.getElementById('viewToggle');
+    if(tablePanel) tablePanel.hidden=state.view!=='table';
+    if(treemapPanel) treemapPanel.hidden=state.view!=='treemap';
+    if(btn){
+      btn.textContent=state.view==='table'?'市值占比':'表格';
+      btn.setAttribute('aria-label',state.view==='table'?'切换到市值占比视图':'切换到表格视图');
+    }
+    updateLayout();
+    render();
+  }
 
   const fmtUSD=(n)=> (n==null||isNaN(n)) ? '—'
     : (Math.abs(n)>=1e9?`$${(n/1e9).toFixed(1)}B`
@@ -1214,6 +1602,13 @@
     updateSortIndicators();
     syncWindowUI();
 
+    if(state.view==='treemap'){
+      updateLayout();
+      layoutTreemap();
+      requestAnimationFrame(updateLayout);
+      return;
+    }
+
     const wrap=document.getElementById('rows');
     wrap.innerHTML='';
     const rows=computeView();
@@ -1334,6 +1729,11 @@
     render();
   });
 
+  document.getElementById('viewToggle').addEventListener('click', ()=>{
+    state.view = state.view==='table' ? 'treemap' : 'table';
+    applyView();
+  });
+
   (async function init(){
     try{
       updateHeaderVisibility();
@@ -1364,7 +1764,14 @@
       updateLayout();
     }catch(e){
       console.error(e);
-      document.getElementById('rows').innerHTML = `<div style="padding:18px;color:#fc401f">加载失败：${e.message}</div>`;
+      const msg=`加载失败：${e.message}`;
+      document.getElementById('rows').innerHTML = `<div style="padding:18px;color:#fc401f">${msg}</div>`;
+      const ts=document.getElementById('treemapStatus');
+      if(ts){
+        ts.style.display='block';
+        ts.className='treemap-status-msg err';
+        ts.textContent=msg;
+      }
       updateLayout();
     }
   })();
