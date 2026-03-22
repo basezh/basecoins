@@ -1354,8 +1354,8 @@
       .sort((a,b)=>(b.value||0)-(a.value||0));
 
     d3.treemap()
-      .tile(d3.treemapSquarify)
-      .size([w,h])
+      .tile(d3.treemapSquarify.ratio(2.2))
+      .size([h,w])
       .paddingOuter(2)
       .paddingInner(2)
       .round(true)
@@ -1365,8 +1365,8 @@
 
     for(const leaf of leaves){
       const d=leaf.data;
-      const x0=leaf.x0,y0=leaf.y0,x1=leaf.x1,y1=leaf.y1;
-      const cw=x1-x0,ch=y1-y0;
+      const lx0=leaf.x0,ly0=leaf.y0,lx1=leaf.x1,ly1=leaf.y1;
+      const x0=ly0,y0=lx0,cw=ly1-ly0,ch=lx1-lx0;
       const minSide=Math.min(cw,ch);
       const area=Math.max(1,cw*ch);
       const ty=treemapTypeScale(minSide,area);
