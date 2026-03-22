@@ -1456,7 +1456,11 @@
     const ch=cellEl.clientHeight;
     const tall=ch>cw;
     const cap=Math.floor(Math.min(56,cw*(tall?0.54:0.4),Math.min(cw,ch)*0.45));
-    const side=Math.max(10,Math.min(cap,th));
+    const raw=cellEl.getAttribute('data-layout-logo');
+    const layoutPx=raw!=null&&raw!==''?parseInt(raw,10):NaN;
+    const floor=(!isNaN(layoutPx)&&layoutPx>0)?layoutPx:10;
+    const target=Math.max(floor,th);
+    const side=Math.max(10,Math.min(cap,target));
     img.style.width=side+'px';
     img.style.height=side+'px';
   }
@@ -1723,6 +1727,7 @@
 
       const im=a.querySelector('.tm-logo-side');
       if(im){
+        a.setAttribute('data-layout-logo',String(ty.logoPx));
         im.style.width=ty.logoPx+'px';
         im.style.height=ty.logoPx+'px';
         im.src=r.dex?.image||TM_PLACEHOLDER;
