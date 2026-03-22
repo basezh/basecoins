@@ -552,6 +552,16 @@
     align-items:center;
     text-align:center;
   }
+  .tm-toprow--stack{
+    flex-direction:column;
+    gap:max(3px,0.22em);
+  }
+  .tm-toprow--stack .tm-textcol{
+    align-items:center;
+    text-align:center;
+    flex:0 1 auto;
+    width:100%;
+  }
   .tm-logo-side{
     border-radius:8px;
     object-fit:cover;
@@ -1421,7 +1431,12 @@
         continue;
       }
 
-      const topClass=ty.showLogo?'tm-toprow':'tm-toprow tm-toprow--solo';
+      const tallCell=ch>cw;
+      const topClass=[
+        'tm-toprow',
+        tallCell?'tm-toprow--stack':'',
+        ty.showLogo?'':'tm-toprow--solo'
+      ].filter(Boolean).join(' ');
       let topInner='';
       if(ty.showLogo) topInner+='<img class="tm-logo-side" alt="">';
       topInner+='<div class="tm-textcol">';
