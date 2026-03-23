@@ -1583,7 +1583,10 @@
   function scheduleTreemapTextFit(canvas){
     if(!canvas) return;
     requestAnimationFrame(()=>{
-      requestAnimationFrame(()=>runTreemapTextFit(canvas));
+      requestAnimationFrame(()=>{
+        runTreemapTextFit(canvas);
+        treemapApplyMonotonicClampPostFit(canvas);
+      });
     });
   }
 
@@ -1713,6 +1716,101 @@
     return 0;
   }
 
+  /** Lower FDV must not use larger ticker/name/price/logo than any higher-FDV cell that shows that layer. */
+  function treemapClampTyMonotonicByFdv(leaves){
+    leaves.sort((a,b)=>b.fdv-a.fdv);
+    let capT=Infinity,capN=Infinity,capP=Infinity,capL=Infinity;
+    for(const item of leaves){
+      const r=item.rawTy;
+      const d=item.d;
+      const ty={...r};
+      ty.fsTicker=Math.min(r.fsTicker,capT);
+      capT=ty.fsTicker;
+
+      const hasNameSide=d.type==='o'
+        ?item.minSide>=30
+        :(r.showName&&item.minSide>=18);
+      if(hasNameSide){
+        ty.fsName=Math.min(r.fsName,capN);
+        capN=ty.fsName;
+      }
+
+      const showsPrice=d.type==='o'?item.minSide>=22:item.minSide>=18;
+      if(showsPrice){
+        ty.fsPrice=Math.min(r.fsPrice,capP);
+        capP=ty.fsPrice;
+      }
+
+      if(r.showLogo){
+        ty.logoPx=Math.min(r.logoPx,capL);
+        capL=ty.logoPx;
+      }
+      item.ty=ty;
+    }
+  }
+
+  function treemapApplyMonotonicClampPostFit(canvas){
+    const sel='a.treemap-cell[data-tm-fdv], .treemap-cell.treemap-other[data-tm-fdv]';
+    const nodes=[...canvas.querySelectorAll(sel)];
+    if(nodes.length<=1) return;
+    nodes.sort((a,b)=>(parseFloat(b.dataset.tmFdv)||0)-(parseFloat(a.dataset.tmFdv)||0));
+    let capT=1e9,capN=1e9,capP=1e9,capL=1e9;
+    for(const cell of nodes){
+      const tick=cell.querySelector('.tm-ticker-side');
+      if(tick){
+        const fs=parseFloat(tick.style.fontSize);
+        if(!isNaN(fs)){
+          const v=Math.min(fs,capT);
+          tick.style.fontSize=v.toFixed(1)+'px';
+          capT=v;
+        }
+      }
+      const name=cell.querySelector('.tm-name-side');
+      if(name){
+        const fs=parseFloat(name.style.fontSize);
+        if(!isNaN(fs)){
+          const v=Math.min(fs,capN);
+          name.style.fontSize=v.toFixed(1)+'px';
+          capN=v;
+        }
+      }
+      const pch=cell.querySelector('.tm-pricechg');
+      if(pch){
+        if(pch.classList.contains('tm-pricechg--stack')){
+          const pl=pch.querySelector('.tm-price-line');
+          const cl=pch.querySelector('.tm-chg-line');
+          const fsp=pl?parseFloat(pl.style.fontSize):NaN;
+          const base=!isNaN(fsp)?fsp:(cl?parseFloat(cl.style.fontSize):NaN);
+          if(!isNaN(base)){
+            const v=Math.min(base,capP);
+            if(pl) pl.style.fontSize=v.toFixed(1)+'px';
+            if(cl) cl.style.fontSize=v.toFixed(1)+'px';
+            capP=v;
+          }
+        }else{
+          const fs=parseFloat(pch.style.fontSize);
+          if(!isNaN(fs)){
+            const v=Math.min(fs,capP);
+            pch.style.fontSize=v.toFixed(1)+'px';
+            capP=v;
+          }
+        }
+      }
+      const img=cell.querySelector('img.tm-logo-side');
+      if(img){
+        const s=parseFloat(img.style.width);
+        if(!isNaN(s)&&s>0){
+          let v=Math.min(s,capL);
+          v=Math.round(v/2)*2;
+          img.style.width=v+'px';
+          img.style.height=v+'px';
+          if(cell.hasAttribute(Treemap.LOGO_ATTR)) cell.setAttribute(Treemap.LOGO_ATTR,String(v));
+          capL=v;
+        }
+      }
+    }
+  }
+
   function treemapReadCanvasSize(wrapEl){
     const g=Treemap.CANVAS_GRID;
     const p=Treemap.LAYOUT_PAD;
@@ -1723,6 +1821,7 @@
 
   function treemapMountOtherCell(d,box,ty,minSide){
     const div=document.createElement('div');
+    div.dataset.tmFdv=String(treemapHierarchyValue(d));
     div.className='treemap-cell treemap-other'+(ty.tight?' treemap-cell--tight':'');
     applyTreemapCellGeometry(div,box,heatColor(d.chg));
     if(minSide>=22){
@@ -1744,6 +1843,7 @@
     const r=d.row;
     if(!r) return null;
     const a=document.createElement('a');
+    a.dataset.tmFdv=String(treemapHierarchyValue(d));
     a.className='treemap-cell'+(ty.tight?' treemap-cell--tight':'');
     a.href=dexUrl(r);
     a.target='_blank';
@@ -1819,12 +1919,18 @@
       .round(true)
       (root);
 
+    const leaves=[];
     for(const leaf of root.leaves()){
       const d=leaf.data;
       const box=treemapLeafScreenRect(leaf);
       const minSide=Math.min(box.cw,box.ch);
       const area=Math.max(1,box.cw*box.ch);
-      const ty=treemapTypeScale(minSide,area,box.cw,box.ch);
+      const rawTy=treemapTypeScale(minSide,area,box.cw,box.ch);
+      leaves.push({d,box,minSide,rawTy,fdv:treemapHierarchyValue(d)});
+    }
+    treemapClampTyMonotonicByFdv(leaves);
+    for(const item of leaves){
+      const {d,box,ty,minSide}=item;
       if(d.type==='o'){
         canvas.appendChild(treemapMountOtherCell(d,box,ty,minSide));
         continue;
