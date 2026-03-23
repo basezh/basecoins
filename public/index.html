@@ -4,16 +4,16 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>basecoin.best</title>
-<meta name="description" content="Base 链上热门代币趋势排行"/>
+<meta name="description" content="Trending tokens on Base"/>
 <meta property="og:title" content="basecoin.best"/>
-<meta property="og:description" content="Base 链上热门代币趋势排行"/>
+<meta property="og:description" content="Trending tokens on Base"/>
 <meta property="og:type" content="website"/>
 <meta property="og:url" content="https://basecoin.best/"/>
 <meta property="og:image" content="https://basecoin.best/images/thumbnail.png"/>
 <meta property="og:image:type" content="image/png"/>
 <meta name="twitter:card" content="summary_large_image"/>
 <meta name="twitter:title" content="basecoin.best"/>
-<meta name="twitter:description" content="Base 链上热门代币趋势排行"/>
+<meta name="twitter:description" content="Trending tokens on Base"/>
 <meta name="twitter:image" content="https://basecoin.best/images/thumbnail.png"/>
 <link rel="icon"
       href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🟦</text></svg>">
@@ -119,7 +119,7 @@
   .title{
     display:flex;
     align-items:center;
-    gap:2px;
+    gap:14px;
     min-width:0;
     flex:1;
   }
@@ -146,6 +146,12 @@
     font-size:26px;
     font-weight:700;
     letter-spacing:.2px;
+  }
+  .theme-light .title-text{
+    background:linear-gradient(115deg,#050505 0%,#1c1c1c 42%,#0f0f0f 100%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
   }
 
   .theme-toggle{
@@ -831,7 +837,7 @@
       align-items:flex-start;
     }
 
-    .title{gap:2px;align-items:center}
+    .title{gap:10px;align-items:center}
     .base-logo svg{height:17px}
     .title-text{
       font-size:20px;
