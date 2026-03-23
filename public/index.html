@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
@@ -748,7 +748,7 @@
     fill:#8B919E;
   }
 
-  /* ===== 简洁滚动条 ===== */
+  /* ===== Minimal scrollbar ===== */
   .table-scroll,
   .topbar,
   body{
@@ -1056,7 +1056,7 @@
       <div class="title-text">#TRENDING</div>
     </div>
     <div class="theme-toggle">
-      <button id="themeSwitch" class="switch" type="button" role="switch" aria-checked="false" aria-label="切换到浅色主题">
+      <button id="themeSwitch" class="switch" type="button" role="switch" aria-checked="false" aria-label="Switch to light theme">
         <span class="knob"></span>
       </button>
     </div>
@@ -1138,7 +1138,7 @@
   </div>
 
   <footer class="footer" id="footer">
-    <a class="footer-brand" href="https://www.basezh.org/" target="_blank" rel="noopener" aria-label="Base 中文台">
+    <a class="footer-brand" href="https://www.basezh.org/" target="_blank" rel="noopener" aria-label="Base zh community">
       <svg class="basezh-logo" width="1344" height="200" viewBox="0 0 1344 200" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path class="logo-blue" d="M1061.23 47.4572L1030.42 53.9191C1048.38 119.355 1110.27 163.204 1149.53 179.394C1161.78 159.156 1157.55 165.078 1165.54 151.885C1127.61 135.021 1079.86 110.869 1061.23 47.4572Z"/>
         <path class="logo-blue" d="M1106.21 47.4572L1137.02 53.9314C1119.05 119.492 1057.17 163.424 1017.91 179.645C1005.66 159.369 1009.88 165.301 1001.9 152.084C1039.83 135.187 1087.58 110.99 1106.21 47.4572Z"/>
@@ -1190,11 +1190,11 @@
     if(mode==='light'){
       document.documentElement.classList.add('theme-light');
       themeSwitch.setAttribute('aria-checked','true');
-      themeSwitch.setAttribute('aria-label','切换到深色主题');
+      themeSwitch.setAttribute('aria-label','Switch to dark theme');
     }else{
       document.documentElement.classList.remove('theme-light');
       themeSwitch.setAttribute('aria-checked','false');
-      themeSwitch.setAttribute('aria-label','切换到浅色主题');
+      themeSwitch.setAttribute('aria-label','Switch to light theme');
     }
     localStorage.setItem('theme-mode',mode);
   }
@@ -1729,13 +1729,13 @@
       const subLine=treemapOtherSubHtml(ty,minSide,d.fdv,d.vol);
       const chgCls=tmChgClass(d.chg);
       div.innerHTML=`<div class="tm-stack${ty.tight?' tm-stack--tight':''}">
-          <div class="tm-ticker-side" style="font-size:${ty.fsTicker}px">${escHtml('其他')}</div>
-          ${minSide>=30?`<div class="tm-name-side" style="font-size:${ty.fsName}px">${escHtml(`${d.count} 个代币`)}</div>`:''}
+          <div class="tm-ticker-side" style="font-size:${ty.fsTicker}px">${escHtml('Other')}</div>
+          ${minSide>=30?`<div class="tm-name-side" style="font-size:${ty.fsName}px">${escHtml(`${d.count} tokens`)}</div>`:''}
           ${treemapOtherChgHtml(ty.fsPrice,chgCls,fmtTmChg(d.chg))}
           ${subLine}
         </div>`;
     }else{
-      div.innerHTML=`<div class="tm-stack"><div class="tm-ticker-side" style="font-size:${ty.fsTicker}px">${escHtml('其他')}</div></div>`;
+      div.innerHTML=`<div class="tm-stack"><div class="tm-ticker-side" style="font-size:${ty.fsTicker}px">${escHtml('Other')}</div></div>`;
     }
     return div;
   }
@@ -1792,13 +1792,13 @@
     canvas.innerHTML='';
 
     if(!state.rows.length){
-      showTreemapStatus('加载中…',false);
+      showTreemapStatus('Loading…',false);
       return;
     }
 
     const nodes=buildTreemapNodes();
     if(!nodes.length){
-      showTreemapStatus('当前分类下没有有效 FDV 数据，无法绘制占比图。',false);
+      showTreemapStatus('No valid FDV data in this category; cannot draw the treemap.',false);
       return;
     }
     showTreemapStatus('',false);
@@ -1918,13 +1918,13 @@
   async function fetchDune(){
     const res=await fetch('/api/dune-data');
     if(!res.ok){
-      let msg='数据请求失败';
+      let msg='Data request failed';
       try{ const j=await res.json(); if(j.error) msg=j.error; }catch{}
       throw new Error(msg);
     }
     const data=await res.json();
     const rows=data.rows;
-    if(!Array.isArray(rows)||!rows.length) throw new Error(data.error||'暂无数据');
+    if(!Array.isArray(rows)||!rows.length) throw new Error(data.error||'No data available');
     return rows;
   }
 
@@ -2182,7 +2182,7 @@
       updateLayout();
     }catch(e){
       console.error(e);
-      const msg=`加载失败：${e.message}`;
+      const msg=`Load failed: ${e.message}`;
       document.getElementById('rows').innerHTML = `<div style="padding:18px;color:#fc401f">${msg}</div>`;
       const ts=document.getElementById('treemapStatus');
       if(ts){
