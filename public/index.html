@@ -1580,16 +1580,6 @@
     canvas.querySelectorAll('.treemap-cell.treemap-other').forEach(fitTreemapOtherCell);
   }
 
-  function scheduleTreemapTextFit(canvas){
-    if(!canvas) return;
-    requestAnimationFrame(()=>{
-      requestAnimationFrame(()=>{
-        runTreemapTextFit(canvas);
-        treemapApplyMonotonicClampPostFit(canvas);
-      });
-    });
-  }
-
   let treemapLayoutRaf=null;
   let treemapResizeDebounce=null;
   function layoutTreemap(){
@@ -1597,6 +1587,7 @@
     if(treemapLayoutRaf) cancelAnimationFrame(treemapLayoutRaf);
     treemapLayoutRaf=requestAnimationFrame(()=>{
       treemapLayoutRaf=null;
+      updateLayout();
       runTreemapLayout();
     });
   }
@@ -1939,7 +1930,9 @@
       if(el) canvas.appendChild(el);
     }
 
-    scheduleTreemapTextFit(canvas);
+    void wrap.offsetHeight;
+    runTreemapTextFit(canvas);
+    treemapApplyMonotonicClampPostFit(canvas);
   }
 
   function applyView(){
@@ -2129,7 +2122,6 @@
     if(state.view==='treemap'){
       updateLayout();
       layoutTreemap();
-      requestAnimationFrame(updateLayout);
       return;
     }
 
