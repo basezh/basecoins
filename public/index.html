@@ -1283,9 +1283,7 @@
   };
 
   const Treemap={
-    LOGO_PLACEHOLDER:'data:image/svg+xml,'+encodeURIComponent(
-      '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="#ccc"/><text x="50%" y="55%" text-anchor="middle" font-size="14" fill="#333">?</text></svg>'
-    ),
+    LOGO_PLACEHOLDER:'/images/question.jpg',
     MERGE_FRAC:0.005,
     TEXT_MIN_SCALE:0.34,
     D3_SQUARIFY_RATIO:2.2,
@@ -2018,9 +2016,9 @@
           <div class="rank">#${r._rank}</div>
           <div class="token">
             <img class="logo"
-                 src="${r.dex?.image || 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22><rect width=%2240%22 height=%2240%22 fill=%22%23cccccc%22/><text x=%2250%25%22 y=%2255%25%22 text-anchor=%22middle%22 font-size=%2225%22 font-weight=%22600%22 dy=%22.3em%22 fill=%22%23000%22>?</text></svg>'}"
+                 src="${r.dex?.image || Treemap.LOGO_PLACEHOLDER}"
                  alt="token logo"
-                 onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22><rect width=%2240%22 height=%2240%22 fill=%22%23cccccc%22/><text x=%2250%25%22 y=%2255%25%22 text-anchor=%22middle%22 font-size=%2225%22 font-weight=%22600%22 dy=%22.3em%22 fill=%22%23000%22>?</text></svg>'">
+                 onerror="this.onerror=null;this.src='${Treemap.LOGO_PLACEHOLDER}'">
             <div class="tinfo">
               <div class="symbol-line">
                 <a class="symbol link" href="${r.dex?.url||'#'}" target="_blank" rel="noopener">${r.dex?.baseSymbol || r.symbol || '—'}</a>
@@ -2049,9 +2047,9 @@
           <div class="rank">#${r._rank}</div>
           <div class="token">
             <img class="logo"
-                 src="${r.dex?.image || 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22><rect width=%2240%22 height=%2240%22 fill=%22%23cccccc%22/><text x=%2250%25%22 y=%2255%25%22 text-anchor=%22middle%22 font-size=%2225%22 font-weight=%22600%22 dy=%22.3em%22 fill=%22%23000%22>?</text></svg>'}"
+                 src="${r.dex?.image || Treemap.LOGO_PLACEHOLDER}"
                  alt="token logo"
-                 onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22><rect width=%2240%22 height=%2240%22 fill=%22%23cccccc%22/><text x=%2250%25%22 y=%2255%25%22 text-anchor=%22middle%22 font-size=%2225%22 font-weight=%22600%22 dy=%22.3em%22 fill=%22%23000%22>?</text></svg>'">
+                 onerror="this.onerror=null;this.src='${Treemap.LOGO_PLACEHOLDER}'">
             <div class="tinfo">
               <div class="symbol-line">
                 <a class="symbol link" href="${r.dex?.url||'#'}" target="_blank" rel="noopener">${r.dex?.baseSymbol || r.symbol || '—'}</a>
