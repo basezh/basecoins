@@ -1314,7 +1314,7 @@
   const Treemap={
     LOGO_PLACEHOLDER:'/images/question.jpg',
     MERGE_FRAC:0.005,
-    TEXT_MIN_SCALE:0.34,
+    TEXT_MIN_SCALE:0.38,
     D3_SQUARIFY_RATIO:2.2,
     FIT_LINE_ITERS:38,
     FIT_FLEX_ITERS:36,
@@ -1324,8 +1324,8 @@
     CANVAS_GRID:8,
     LAYOUT_PAD:8,
     LOGO_ATTR:'data-layout-logo',
-    LOGO_MAX_PX:56,
-    LOGO_MIN_PX:10,
+    LOGO_MAX_PX:76,
+    LOGO_MIN_PX:11,
     HEAT_RANGE:24,
   };
 
@@ -1523,8 +1523,8 @@
     const mq=Math.max(6,Math.round(Math.min(cw,ch)/6)*6);
     const u=Math.max(0,Math.min(1,(54-mq)/28));
     return Math.floor(Math.min(Treemap.LOGO_MAX_PX,
-      cw*(tall?(0.54+0.06*u):(0.4+0.08*u)),
-      mq*(0.45+0.07*u)));
+      cw*(tall?(0.60+0.06*u):(0.46+0.09*u)),
+      mq*(0.52+0.08*u)));
   }
 
   function syncTreemapLogoSize(img,cellEl){
@@ -1546,8 +1546,8 @@
     const nameEl=textCol?.querySelector('.tm-name-side');
     const tickEl=textCol?.querySelector('.tm-ticker-side');
     if(textCol) scaleTreemapNameTickerPair(nameEl,tickEl,textCol.clientWidth+1);
-    fitTreemapStackOrFlexRow(a.querySelector('.tm-pricechg'),'tm-pricechg--stack','.tm-price-line,.tm-chg-line',12);
-    fitTreemapStackOrFlexRow(a.querySelector('.tm-subwrap'),'tm-subwrap--stack','.tm-sub-line',9);
+    fitTreemapStackOrFlexRow(a.querySelector('.tm-pricechg'),'tm-pricechg--stack','.tm-price-line,.tm-chg-line',14);
+    fitTreemapStackOrFlexRow(a.querySelector('.tm-subwrap'),'tm-subwrap--stack','.tm-sub-line',10);
   }
 
   function fitTreemapMiniCell(a){
@@ -1567,8 +1567,8 @@
     const nameEl=div.querySelector('.tm-name-side');
     const tickEl=div.querySelector('.tm-ticker-side');
     scaleTreemapNameTickerPair(nameEl,tickEl,div.clientWidth-2);
-    fitTreemapStackOrFlexRow(div.querySelector('.tm-pricechg'),'tm-pricechg--stack','.tm-price-line,.tm-chg-line',12);
-    fitTreemapStackOrFlexRow(div.querySelector('.tm-subwrap'),'tm-subwrap--stack','.tm-sub-line',9);
+    fitTreemapStackOrFlexRow(div.querySelector('.tm-pricechg'),'tm-pricechg--stack','.tm-price-line,.tm-chg-line',14);
+    fitTreemapStackOrFlexRow(div.querySelector('.tm-subwrap'),'tm-subwrap--stack','.tm-sub-line',10);
   }
 
   function runTreemapTextFit(canvas){
@@ -1617,33 +1617,33 @@
     const chU=Math.max(4,Math.round(ch/4)*4);
     const u=Math.max(0,Math.min(1,(58-edge)/26));
     const kLo=0.3+0.14*u;
-    const baseDiv=5.15-0.4*u;
-    const k=Math.max(kLo,Math.min(1,Math.min(edge/84,s/54)));
+    const baseDiv=4.72-0.35*u;
+    const k=Math.max(kLo,Math.min(1,Math.min(edge/76,s/48)));
     const base=(s/baseDiv)*k;
-    const ft=0.22+0.06*u;
-    const fn=0.13+0.04*u;
-    const fp=0.15+0.05*u;
-    const fsMul=1.05+0.07*u;
-    const fsTicker=Math.round(Math.max(4,Math.min(22,base*fsMul,edge*ft)));
-    const fsName=Math.round(Math.max(4,Math.min(13,base*(0.48+0.04*u),edge*fn)));
-    const fsPrice=Math.round(Math.max(4,Math.min(15,base*(0.62+0.06*u),edge*fp)));
-    const shrink=Math.min(edge/74,s/52,1);
+    const ft=0.245+0.065*u;
+    const fn=0.148+0.045*u;
+    const fp=0.168+0.055*u;
+    const fsMul=1.12+0.08*u;
+    const fsTicker=Math.round(Math.max(4,Math.min(28,base*fsMul,edge*ft)));
+    const fsName=Math.round(Math.max(4,Math.min(17,base*(0.52+0.045*u),edge*fn)));
+    const fsPrice=Math.round(Math.max(4,Math.min(19,base*(0.68+0.065*u),edge*fp)));
+    const shrink=Math.min(edge/70,s/48,1);
     const showName=edgeRaw>=20;
     const gapText=Math.max(1,Math.round(Math.min(fsName,fsTicker)*0.08));
     const lhName=1.18;
     const lhTicker=1.12;
     const textStackH=Math.round((showName?fsName*lhName+gapText:0)+fsTicker*lhTicker);
-    const cwCap=cwU*(0.44+0.08*u);
-    const edgeCap=edge*(0.38+0.1*u);
+    const cwCap=cwU*(0.50+0.09*u);
+    const edgeCap=edge*(0.43+0.11*u);
     const tallCap=tallCell
-      ?Math.min(cwU*(0.55+0.05*u),chU*(0.34+0.05*u))
-      :chU*(0.42+0.08*u);
+      ?Math.min(cwU*(0.58+0.055*u),chU*(0.38+0.055*u))
+      :chU*(0.46+0.085*u);
     const capCell=Math.floor(Math.min(Treemap.LOGO_MAX_PX,cwCap,edgeCap,tallCap));
     const logoPx=Math.max(Treemap.LOGO_MIN_PX,Math.min(capCell,u>0.12
-      ?Math.max(textStackH,Math.floor(capCell*0.76))
+      ?Math.max(textStackH,Math.floor(capCell*0.82))
       :textStackH));
-    const showLogo=edgeRaw>=30&&area>=900&&shrink>=0.4;
-    const showSub=edgeRaw>=60&&area>=3000;
+    const showLogo=edgeRaw>=28&&area>=720&&shrink>=0.36;
+    const showSub=edgeRaw>=56&&area>=2600;
     const tight=edgeRaw<46;
     return{fsTicker,fsName,fsPrice,logoPx,showLogo,showName,showSub,shrink,tallCell,tight};
   }
