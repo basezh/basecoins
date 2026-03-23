@@ -1784,6 +1784,91 @@
     return a;
   }
 
+  /* d3-hierarchy squarify with row orientation flipped so cells tend to be wider than tall
+     (screen cw>ch under this page's .size([h,w]) + treemapLeafScreenRect mapping). */
+  function treemapDiceRow(parent,x0,y0,x1,y1){
+    const nodes=parent.children;
+    let i=-1;
+    const n=nodes.length;
+    const k=parent.value&&(x1-x0)/parent.value;
+    while(++i<n){
+      const node=nodes[i];
+      node.y0=y0;
+      node.y1=y1;
+      node.x0=x0;
+      node.x1=x0+=node.value*k;
+    }
+  }
+  function treemapSliceRow(parent,x0,y0,x1,y1){
+    const nodes=parent.children;
+    let i=-1;
+    const n=nodes.length;
+    const k=parent.value&&(y1-y0)/parent.value;
+    while(++i<n){
+      const node=nodes[i];
+      node.x0=x0;
+      node.x1=x1;
+      node.y0=y0;
+      node.y1=y0+=node.value*k;
+    }
+  }
+  function treemapSquarifyRatioPreferWide(ratio,parent,x0,y0,x1,y1){
+    const rows=[];
+    const nodes=parent.children;
+    let row;
+    let i0=0;
+    let i1=0;
+    const n=nodes.length;
+    let dx;
+    let dy;
+    let nodeValue;
+    let value=parent.value;
+    let sumValue;
+    let minValue;
+    let maxValue;
+    let newRatio;
+    let minRatio;
+    let alpha;
+    let beta;
+    while(i0<n){
+      dx=x1-x0;
+      dy=y1-y0;
+      do sumValue=nodes[i1++].value; while(!sumValue&&i1<n);
+      minValue=maxValue=sumValue;
+      alpha=Math.max(dy/dx,dx/dy)/(value*ratio);
+      beta=sumValue*sumValue*alpha;
+      minRatio=Math.max(maxValue/beta,beta/minValue);
+      for(;i1<n;++i1){
+        sumValue+=nodeValue=nodes[i1].value;
+        if(nodeValue<minValue) minValue=nodeValue;
+        if(nodeValue>maxValue) maxValue=nodeValue;
+        beta=sumValue*sumValue*alpha;
+        newRatio=Math.max(maxValue/beta,beta/minValue);
+        if(newRatio>minRatio){
+          sumValue-=nodeValue;
+          break;
+        }
+        minRatio=newRatio;
+      }
+      rows.push(row={value:sumValue, dice:dx>=dy, children:nodes.slice(i0,i1)});
+      if(row.dice) treemapDiceRow(row,x0,y0,x1,value?y0+=dy*sumValue/value:y1);
+      else treemapSliceRow(row,x0,y0,value?x0+=dx*sumValue/value:x1,y1);
+      value-=sumValue;
+      i0=i1;
+    }
+    return rows;
+  }
+  function treemapTileSquarifyPreferWide(ratio){
+    ratio=(ratio=+ratio)>1?ratio:1;
+    function tile(parent,x0,y0,x1,y1){
+      treemapSquarifyRatioPreferWide(ratio,parent,x0,y0,x1,y1);
+    }
+    tile.ratio=function(x){
+      return treemapTileSquarifyPreferWide((x=+x)>1?x:1);
+    };
+    return tile;
+  }
+
   function runTreemapLayout(){
     const canvas=document.getElementById('treemapCanvas');
     const wrap=document.getElementById('treemapWrap');
@@ -1812,7 +1897,7 @@
       .sort((a,b)=>(b.value||0)-(a.value||0));
 
     d3.treemap()
-      .tile(d3.treemapSquarify.ratio(Treemap.D3_SQUARIFY_RATIO))
+      .tile(treemapTileSquarifyPreferWide(Treemap.D3_SQUARIFY_RATIO))
       .size([h,w])
       .paddingOuter(2)
       .paddingInner(2)
