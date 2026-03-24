@@ -804,7 +804,8 @@
     }
   }
 
-  @media (max-width:720px){
+  /* Phones + tablets (incl. ~768–820px iPad): one-row topbar scroll + cycle 1h/6h/24h */
+  @media (max-width:1024px){
     :root{
       --page-side-padding:12px;
       --page-top-padding:12px;
@@ -972,7 +973,7 @@
     }
   }
 
-  @media (min-width:721px){
+  @media (min-width:1025px){
     #mobileWinCycle{display:none}
   }
 
@@ -1266,8 +1267,9 @@
     panelEl.style.setProperty('--panel-height', `${Math.max(220, Math.floor(panelHeight))}px`);
   }
 
+  /** Compact layout: matches @media (max-width:1024px) — phones, iPad-class widths, narrow desktop windows */
   function isMobile(){
-    return window.innerWidth <= 720;
+    return window.innerWidth <= 1024;
   }
 
   function isMapView(){
