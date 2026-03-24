@@ -243,8 +243,12 @@
 
   #viewToggle{
     box-sizing:border-box;
-    min-width:76px;
+    width:88px;
+    min-width:88px;
+    max-width:88px;
+    flex-shrink:0;
     justify-content:center;
+    white-space:nowrap;
   }
 
   .chip-icon{
@@ -898,9 +902,11 @@
     #catChips .chip:not([data-cat="all"]) .chip-label{display:none}
 
     #viewToggle{
-      min-width:48px;
+      width:80px;
+      min-width:80px;
+      max-width:80px;
       min-height:38px;
-      padding:0 10px;
+      padding:0 8px;
       border-radius:11px;
       font-size:12px;
       font-weight:500;
@@ -1002,9 +1008,11 @@
     }
 
     #viewToggle{
-      min-width:44px;
+      width:76px;
+      min-width:76px;
+      max-width:76px;
       min-height:36px;
-      padding:0 9px;
+      padding:0 6px;
       font-size:11px;
     }
 
@@ -1090,7 +1098,7 @@
     </div>
 
     <div class="topbar-right">
-      <button type="button" class="chip" id="viewToggle" aria-label="Switch to treemap view">Treemap</button>
+      <button type="button" class="chip" id="viewToggle" aria-label="Switch to FDV map view">Table</button>
       <div class="chips" id="winChips">
         <div class="chip" data-win="1h">1h</div>
         <div class="chip" data-win="6h">6h</div>
@@ -1260,8 +1268,12 @@
     return window.innerWidth <= 720;
   }
 
+  function isMapView(){
+    return state.view==='fdvMap'||state.view==='volMap';
+  }
+
   function updateHeaderVisibility(){
-    if(state.view!=='table'){
+    if(!isMapView()){
       document.getElementById('theadDesktop').style.display='none';
       document.getElementById('theadMobile').style.display='none';
       return;
@@ -1354,35 +1366,44 @@
     return {...r,_price:price,_change:change,_volume:volume??0,_fdv:fdv};
   }
 
+  function treemapWeightRow(r){
+    if(state.view==='volMap') return Math.max(0,Number(r._volume)||0);
+    return Math.max(0,Number(r._fdv)||0);
+  }
+
   function rowsForTreemap(){
     const filtered=state.rows.filter(r=>state.category==='all'?true:r.source===state.category);
-    return filtered.map(mapRowForWin).filter(r=>r._fdv!=null&&r._fdv>0);
+    const mapped=filtered.map(mapRowForWin);
+    if(state.view==='volMap') return mapped.filter(r=>treemapWeightRow(r)>0);
+    return mapped.filter(r=>r._fdv!=null&&r._fdv>0);
   }
 
   function buildTreemapNodes(){
     const items=rowsForTreemap();
-    const total=items.reduce((s,r)=>s+r._fdv,0);
+    const total=items.reduce((s,r)=>s+treemapWeightRow(r),0);
     if(total<=0) return [];
     const thr=total*Treemap.MERGE_FRAC;
     const big=[], small=[];
     for(const r of items){
-      if(r._fdv>=thr) big.push(r);
+      if(treemapWeightRow(r)>=thr) big.push(r);
       else small.push(r);
     }
     const wrapped=big.map(row=>({type:'t',row}));
     if(small.length){
-      const sumFdv=small.reduce((s,r)=>s+r._fdv,0);
-      const sumVol=small.reduce((s,r)=>s+(r._volume||0),0);
+      const layoutValue=small.reduce((s,r)=>s+treemapWeightRow(r),0);
+      const sumFdv=small.reduce((s,r)=>s+(Number(r._fdv)||0),0);
+      const sumVol=small.reduce((s,r)=>s+(Number(r._volume)||0),0);
       let w=0, sumC=0;
       for(const r of small){
         const c=r._change;
-        if(c!=null&&!isNaN(c)){
-          sumC+=c*r._fdv;
-          w+=r._fdv;
+        const tw=treemapWeightRow(r);
+        if(c!=null&&!isNaN(c)&&tw>0){
+          sumC+=c*tw;
+          w+=tw;
         }
       }
       const avgChg=w>0?sumC/w:null;
-      wrapped.push({type:'o',fdv:sumFdv,vol:sumVol,chg:avgChg,count:small.length});
+      wrapped.push({type:'o',layoutValue,fdv:sumFdv,vol:sumVol,chg:avgChg,count:small.length});
     }
     return wrapped;
   }
@@ -1583,7 +1604,7 @@
   let treemapLayoutRaf=null;
   let treemapResizeDebounce=null;
   function layoutTreemap(){
-    if(state.view!=='treemap') return;
+    if(!isMapView()) return;
     if(treemapLayoutRaf) cancelAnimationFrame(treemapLayoutRaf);
     treemapLayoutRaf=requestAnimationFrame(()=>{
       treemapLayoutRaf=null;
@@ -1593,7 +1614,7 @@
   }
 
   function scheduleLayoutTreemapOnResize(){
-    if(state.view!=='treemap') return;
+    if(!isMapView()) return;
     if(treemapResizeDebounce) clearTimeout(treemapResizeDebounce);
     treemapResizeDebounce=setTimeout(()=>{
       treemapResizeDebounce=null;
@@ -1702,8 +1723,8 @@
 
   function treemapHierarchyValue(d){
     if(!d||d.children) return 0;
-    if(d.type==='t') return Math.max(0,d.row._fdv||0);
-    if(d.type==='o') return Math.max(0,d.fdv||0);
+    if(d.type==='t') return treemapWeightRow(d.row);
+    if(d.type==='o') return Math.max(0,d.layoutValue||0);
     return 0;
   }
 
@@ -1889,7 +1910,10 @@
 
     const nodes=buildTreemapNodes();
     if(!nodes.length){
-      showTreemapStatus('No valid FDV data in this category; cannot draw the treemap.',false);
+      const msg=state.view==='volMap'
+        ?'No valid volume data in this category; cannot draw the treemap.'
+        :'No valid FDV data in this category; cannot draw the treemap.';
+      showTreemapStatus(msg,false);
       return;
     }
     showTreemapStatus('',false);
@@ -1940,10 +1964,16 @@
     const treemapPanel=document.getElementById('treemapPanel');
     const btn=document.getElementById('viewToggle');
     if(tablePanel) tablePanel.hidden=state.view!=='table';
-    if(treemapPanel) treemapPanel.hidden=state.view!=='treemap';
+    if(treemapPanel) treemapPanel.hidden=!isMapView();
     if(btn){
-      btn.textContent=state.view==='table'?'Treemap':'Table';
-      btn.setAttribute('aria-label',state.view==='table'?'Switch to treemap view':'Switch to table view');
+      const labels={table:'Table',fdvMap:'FDV Map',volMap:'Vol Map'};
+      const nextAria={
+        table:'Switch to FDV map view',
+        fdvMap:'Switch to volume map view',
+        volMap:'Switch to table view'
+      };
+      btn.textContent=labels[state.view];
+      btn.setAttribute('aria-label',nextAria[state.view]);
     }
     updateLayout();
     render();
@@ -2119,7 +2149,7 @@
     updateSortIndicators();
     syncWindowUI();
 
-    if(state.view==='treemap'){
+    if(isMapView()){
       updateLayout();
       layoutTreemap();
       return;
@@ -2246,7 +2276,9 @@
   });
 
   document.getElementById('viewToggle').addEventListener('click', ()=>{
-    state.view = state.view==='table' ? 'treemap' : 'table';
+    if(state.view==='table') state.view='fdvMap';
+    else if(state.view==='fdvMap') state.view='volMap';
+    else state.view='table';
     applyView();
   });
 
