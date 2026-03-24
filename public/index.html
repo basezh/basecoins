@@ -1275,7 +1275,7 @@
   }
 
   function updateHeaderVisibility(){
-    if(!isMapView()){
+    if(isMapView()){
       document.getElementById('theadDesktop').style.display='none';
       document.getElementById('theadMobile').style.display='none';
       return;
