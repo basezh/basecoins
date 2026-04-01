@@ -130,6 +130,8 @@
     align-items:center;
     color:var(--logo-color);
     flex:0 0 auto;
+    position:relative;
+    z-index:1;
   }
 
   .base-logo svg{
@@ -848,12 +850,18 @@
       align-items:flex-start;
     }
 
-    .title{gap:10px;align-items:center}
-    .title-text{margin-left:6px}
+    .title{
+      align-items:center;
+      gap:20px;
+    }
     .base-logo svg{height:20px}
     .title-text{
       font-size:20px;
       line-height:1.1;
+      position:relative;
+      z-index:0;
+      flex:0 1 auto;
+      min-width:0;
     }
 
     .theme-toggle{margin-top:2px}
