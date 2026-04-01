@@ -138,11 +138,11 @@
     width:auto;
     display:block;
   }
-  /* 默认深色站点：暗色稿 basecoins2；浅色主题：basecoins */
-  .base-logo-mark--light{display:none}
-  .base-logo-mark--dark{display:block}
-  .theme-light .base-logo-mark--light{display:block}
-  .theme-light .base-logo-mark--dark{display:none}
+  /* 白天模式：basecoins.svg | 暗黑模式：basecoins2.svg（与 html.theme-light 同步） */
+  .base-logo-img--day{display:none}
+  .base-logo-img--night{display:block}
+  .theme-light .base-logo-img--day{display:block}
+  .theme-light .base-logo-img--night{display:none}
 
   .hdr-site-logo .hdr-logo-word{fill:var(--text)}
   .hdr-site-logo .hdr-logo-mark{fill:var(--text)}
@@ -1056,8 +1056,9 @@
   <div class="header" id="header">
     <div class="title">
       <span class="base-logo" title="basecoin.best">
-        <img class="base-logo-mark base-logo-mark--light" src="/images/basecoins.svg" alt="basecoin.best" width="678" height="95" decoding="async">
-        <img class="base-logo-mark base-logo-mark--dark" src="/images/basecoins2.svg" alt="" width="678" height="95" decoding="async" aria-hidden="true">
+        <!-- 白天 basecoins.svg · 暗黑 basecoins2.svg -->
+        <img class="base-logo-img--day" src="/images/basecoins.svg" alt="basecoin.best" width="678" height="95" decoding="async">
+        <img class="base-logo-img--night" src="/images/basecoins2.svg" alt="" width="678" height="95" decoding="async" aria-hidden="true">
       </span>
       <div class="title-text">#TRENDING</div>
     </div>
