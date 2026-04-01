@@ -138,11 +138,11 @@
     width:auto;
     display:block;
   }
-  /* 白天模式：basecoins.svg | 暗黑模式：basecoins2.svg（与 html.theme-light 同步） */
-  .base-logo-img--day{display:none}
-  .base-logo-img--night{display:block}
-  .theme-light .base-logo-img--day{display:block}
-  .theme-light .base-logo-img--night{display:none}
+  /* 显式带 .base-logo img，否则会被上一行的 display:block 盖过 display:none */
+  .base-logo img.base-logo-img--day{display:none}
+  .base-logo img.base-logo-img--night{display:block}
+  .theme-light .base-logo img.base-logo-img--day{display:block}
+  .theme-light .base-logo img.base-logo-img--night{display:none}
 
   .hdr-site-logo .hdr-logo-word{fill:var(--text)}
   .hdr-site-logo .hdr-logo-mark{fill:var(--text)}
