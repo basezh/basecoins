@@ -462,32 +462,18 @@
   .ca-btn{
     font-size:10px;
     padding:0 5px;
-    line-height:1;
+    line-height:1.35;
     border-radius:5px;
     border:1px solid var(--btn-br);
-    height:17px;
+    height:18px;
     background:var(--btn-bg);
     color:#3b63ff;
     cursor:pointer;
     transition:background .15s,color .15s,border-color .15s,transform .08s;
     flex:0 0 auto;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    box-sizing:border-box;
-    vertical-align:middle;
   }
-  .ca-btn__icon{display:none;align-items:center;justify-content:center;line-height:0}
-  .ca-btn__icon svg{display:block;width:11px;height:11px}
   .ca-btn:hover{background:var(--btn-hover)}
   .ca-btn:active,.ca-btn.copied{background:var(--btn-active);border-color:var(--blue);color:var(--blue)}
-  .ca-btn.copied .ca-btn__label{display:none}
-  .ca-btn.copied .ca-btn__icon{display:inline-flex}
-  @media (hover:hover){
-    .ca-btn:hover .ca-btn__label{display:none}
-    .ca-btn:hover .ca-btn__icon{display:inline-flex}
-  }
-  .ca-btn:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
 
   .price,
   .change,
@@ -981,8 +967,7 @@
     .fdv{font-size:12px}
     .name-line{font-size:10px}
     .cat-icon{width:14px;height:14px;border-radius:3.5px}
-    .ca-btn{font-size:9px;height:15px;padding:0 3px}
-    .ca-btn__icon svg{width:10px;height:10px}
+    .ca-btn{font-size:9px;height:16px;padding:0 3px;line-height:1.25}
 
     .price-change{
       gap:2px;
@@ -2135,9 +2120,6 @@
     });
   }
 
-  const CA_BTN_ICON_SVG='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
-  const CA_BTN_HTML='<button class="ca-btn" type="button" title="Copy Contract Address"><span class="ca-btn__label">CA</span><span class="ca-btn__icon" aria-hidden="true">'+CA_BTN_ICON_SVG+'</span></button>';
-
   async function copyToClipboard(text, btn){
     try{
       await navigator.clipboard.writeText(text);
@@ -2202,7 +2184,7 @@
               <div class="subline">
                 <div class="name-line">
                   <span class="name" title="${fullName.replace(/"/g,'&quot;')}">${shortName}</span>
-                  ${CA_BTN_HTML}
+                  <button class="ca-btn" title="Copy Contract Address">CA</button>
                 </div>
               </div>
             </div>
@@ -2233,7 +2215,7 @@
               <div class="subline">
                 <div class="name-line">
                   <span class="name" title="${fullName.replace(/"/g,'&quot;')}">${shortName}</span>
-                  ${CA_BTN_HTML}
+                  <button class="ca-btn" title="Copy Contract Address">CA</button>
                 </div>
               </div>
             </div>
