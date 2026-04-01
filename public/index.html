@@ -138,30 +138,11 @@
     width:auto;
     display:block;
   }
-
-  /* 深色：与 #TRENDING 同为 var(--text)；浅色：保留 SVG 原色 */
-  :root:not(.theme-light) .base-logo img{
-    opacity:0;
-  }
-  /* 与占位 img 同宽高，避免 calc(678/95) 与设备亚像素不一致导致右侧被裁切 */
-  :root:not(.theme-light) .base-logo::after{
-    content:'';
-    position:absolute;
-    inset:0;
-    width:100%;
-    height:100%;
-    box-sizing:border-box;
-    background-color:var(--text);
-    -webkit-mask-image:url(/images/basecoins.svg);
-    -webkit-mask-repeat:no-repeat;
-    -webkit-mask-position:left center;
-    -webkit-mask-size:contain;
-    mask-image:url(/images/basecoins.svg);
-    mask-repeat:no-repeat;
-    mask-position:left center;
-    mask-size:contain;
-    pointer-events:none;
-  }
+  /* 默认深色站点：暗色稿 basecoins2；浅色主题：basecoins */
+  .base-logo-mark--light{display:none}
+  .base-logo-mark--dark{display:block}
+  .theme-light .base-logo-mark--light{display:block}
+  .theme-light .base-logo-mark--dark{display:none}
 
   .hdr-site-logo .hdr-logo-word{fill:var(--text)}
   .hdr-site-logo .hdr-logo-mark{fill:var(--text)}
@@ -1075,7 +1056,8 @@
   <div class="header" id="header">
     <div class="title">
       <span class="base-logo" title="basecoin.best">
-        <img src="/images/basecoins.svg" alt="basecoin.best" width="678" height="95" decoding="async">
+        <img class="base-logo-mark base-logo-mark--light" src="/images/basecoins.svg" alt="basecoin.best" width="678" height="95" decoding="async">
+        <img class="base-logo-mark base-logo-mark--dark" src="/images/basecoins2.svg" alt="" width="678" height="95" decoding="async" aria-hidden="true">
       </span>
       <div class="title-text">#TRENDING</div>
     </div>
