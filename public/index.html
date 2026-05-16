@@ -917,14 +917,14 @@
     #catChips .chip:not([data-cat="all"]) .chip-label{display:none}
 
     #viewToggle{
-      width:72px;
-      min-width:72px;
-      max-width:72px;
+      width:46px;
+      min-width:46px;
+      max-width:46px;
       min-height:38px;
-      padding:0 6px;
+      padding:0 4px;
       border-radius:10px;
       font-size:12px;
-      font-weight:500;
+      font-weight:600;
     }
 
     #mobileWinCycle{
@@ -1024,11 +1024,11 @@
     }
 
     #viewToggle{
-      width:68px;
-      min-width:68px;
-      max-width:68px;
+      width:44px;
+      min-width:44px;
+      max-width:44px;
       min-height:36px;
-      padding:0 5px;
+      padding:0 3px;
       font-size:11px;
     }
 
@@ -1292,6 +1292,7 @@
     const m = isMobile();
     if(m !== lastMobileLayout){
       lastMobileLayout = m;
+      syncViewToggleButton();
       render();
     }
     updateLayout();
@@ -1964,22 +1965,27 @@
     treemapApplyMonotonicClampPostFit(canvas);
   }
 
+  function syncViewToggleButton(){
+    const btn=document.getElementById('viewToggle');
+    if(!btn) return;
+    const labels=isMobile()
+      ? {table:'▤',fdvMap:'FDV',volMap:'VOL'}
+      : {table:'Table',fdvMap:'FDV Map',volMap:'Vol Map'};
+    const nextAria={
+      table:'Switch to FDV map view',
+      fdvMap:'Switch to volume map view',
+      volMap:'Switch to table view'
+    };
+    btn.textContent=labels[state.view];
+    btn.setAttribute('aria-label',nextAria[state.view]);
+  }
+
   function applyView(){
     const tablePanel=document.getElementById('tablePanel');
     const treemapPanel=document.getElementById('treemapPanel');
-    const btn=document.getElementById('viewToggle');
     if(tablePanel) tablePanel.hidden=state.view!=='table';
     if(treemapPanel) treemapPanel.hidden=!isMapView();
-    if(btn){
-      const labels={table:'Table',fdvMap:'FDV Map',volMap:'Vol Map'};
-      const nextAria={
-        table:'Switch to FDV map view',
-        fdvMap:'Switch to volume map view',
-        volMap:'Switch to table view'
-      };
-      btn.textContent=labels[state.view];
-      btn.setAttribute('aria-label',nextAria[state.view]);
-    }
+    syncViewToggleButton();
     updateLayout();
     render();
   }
@@ -2290,6 +2296,7 @@
   (async function init(){
     try{
       updateHeaderVisibility();
+      syncViewToggleButton();
       syncWindowUI();
       updateSortIndicators();
 
