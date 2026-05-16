@@ -1,5 +1,5 @@
 const DUNE_QUERY_URL =
-  'https://api.dune.com/api/v1/query/6728582/results?limit=1000';
+  'https://api.dune.com/api/v1/query/7499504/results?limit=1000';
 
 function rowsFromDuneBody(data) {
   return (data?.result?.rows ?? []).map((r) => ({
