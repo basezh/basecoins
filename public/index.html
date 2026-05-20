@@ -2004,35 +2004,38 @@
     if(mobileBtn) mobileBtn.textContent = state.window;
   }
 
-  const chooseBestPair=(pairs=[])=>{
-    if(!pairs.length) return null;
+  const sortPairsByLiquidity=(a,b)=>{
+    const la=a.liquidity?.usd??0, lb=b.liquidity?.usd??0;
+    if(lb!==la) return lb-la;
+    return (b.volume?.h24??0)-(a.volume?.h24??0);
+  };
 
-    const basePairs = pairs.filter(pair => {
-      const url = pair.url || '';
-      const network = (url.split('/')[3] || '').toLowerCase();
-      return network === 'base';
+  /** 只选「查询地址 = baseToken」的池；priceUsd 是 base 侧价格，quote 侧会错成别的币 */
+  const chooseBestPair=(pairs=[], tokenAddress)=>{
+    if(!pairs.length) return null;
+    const addr=String(tokenAddress||'').toLowerCase();
+    if(!addr) return null;
+
+    const onBase=pairs.filter(pair=>{
+      if((pair.chainId||'').toLowerCase()==='base') return true;
+      const network=(pair.url||'').split('/')[3]||'';
+      return network.toLowerCase()==='base';
     });
 
-    if(basePairs.length > 0) {
-      return [...basePairs].sort((a,b)=>{
-        const la=a.liquidity?.usd??0, lb=b.liquidity?.usd??0;
-        if(lb!==la) return lb-la;
-        return (b.volume?.h24??0)-(a.volume?.h24??0);
-      })[0];
-    }
+    const asBaseToken=onBase.filter(pair=>
+      String(pair.baseToken?.address||'').toLowerCase()===addr
+    );
 
-    return [...pairs].sort((a,b)=>{
-      const la=a.liquidity?.usd??0, lb=b.liquidity?.usd??0;
-      if(lb!==la) return lb-la;
-      return (b.volume?.h24??0)-(a.volume?.h24??0);
-    })[0];
+    if(!asBaseToken.length) return null;
+
+    return [...asBaseToken].sort(sortPairsByLiquidity)[0];
   };
 
   async function fetchDex(address){
     const res=await fetch(`https://api.dexscreener.com/latest/dex/tokens/${address}`);
     if(!res.ok) return null;
     const data=await res.json();
-    const p=chooseBestPair(data?.pairs);
+    const p=chooseBestPair(data?.pairs, address);
     if(!p) return null;
     const url=p.url||'';
     const network=(url.split('/')[3]||'').toLowerCase();
