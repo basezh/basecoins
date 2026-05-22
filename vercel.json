@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/all", "destination": "/index.html" },
+    { "source": "/virtual", "destination": "/index.html" },
+    { "source": "/clanker", "destination": "/index.html" },
+    { "source": "/doppler", "destination": "/index.html" },
+    { "source": "/aerodrome", "destination": "/index.html" },
+    { "source": "/flaunch", "destination": "/index.html" },
+    { "source": "/liquid", "destination": "/index.html" }
+  ]
+}

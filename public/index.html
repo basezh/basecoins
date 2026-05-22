@@ -1320,6 +1320,7 @@
   };
 
   const WINDOWS = ['1h','6h','24h'];
+  const CATEGORY_SLUGS = ['all','virtual','clanker','doppler','aerodrome','flaunch','liquid'];
 
   const state={
     category:'all',
@@ -1328,6 +1329,55 @@
     rows:[],
     sort:{key:'volume',dir:'desc'}
   };
+
+  function categoryFromPathname(pathname){
+    const raw=(pathname||'/').replace(/\/+$/,'')||'/';
+    if(raw==='/'||raw==='') return 'all';
+    const slug=raw.replace(/^\//,'').toLowerCase();
+    if(slug==='all') return 'all';
+    return CATEGORY_SLUGS.includes(slug)?slug:null;
+  }
+
+  function pathForCategory(cat){
+    return (!cat||cat==='all')?'/':`/${cat}`;
+  }
+
+  function syncCategoryChips(){
+    document.querySelectorAll('#catChips .chip').forEach(chip=>{
+      chip.classList.toggle('active', chip.dataset.cat===state.category);
+    });
+  }
+
+  function syncCategoryUrl(mode){
+    const path=pathForCategory(state.category);
+    const next=path+location.search+location.hash;
+    const cur=location.pathname+location.search+location.hash;
+    if(cur===next) return;
+    if(mode==='push') history.pushState({category:state.category},'',next);
+    else history.replaceState({category:state.category},'',next);
+  }
+
+  function setCategory(cat,{push=false,renderNow=true}={}){
+    const next=CATEGORY_SLUGS.includes(cat)?cat:'all';
+    state.category=next;
+    syncCategoryUrl(push?'push':'replace');
+    syncCategoryChips();
+    if(renderNow) render();
+  }
+
+  function initCategoryFromUrl(){
+    const parsed=categoryFromPathname(location.pathname);
+    if(parsed===null){
+      state.category='all';
+      history.replaceState({category:'all'},'','/'+location.search+location.hash);
+    }else{
+      state.category=parsed;
+      syncCategoryUrl('replace');
+    }
+    syncCategoryChips();
+  }
+
+  initCategoryFromUrl();
 
   const Treemap={
     LOGO_PLACEHOLDER:'/images/question.jpg',
@@ -2267,11 +2317,19 @@
 
   document.getElementById('catChips').addEventListener('click', e=>{
     const c=e.target.closest('.chip');
-    if(!c) return;
-    [...e.currentTarget.children].forEach(x=>x.classList.remove('active'));
-    c.classList.add('active');
-    state.category=c.dataset.cat;
-    render();
+    if(!c||!c.dataset.cat) return;
+    if(c.dataset.cat===state.category) return;
+    setCategory(c.dataset.cat,{push:true});
+  });
+
+  window.addEventListener('popstate',()=>{
+    const parsed=categoryFromPathname(location.pathname);
+    if(parsed===null) setCategory('all',{push:false});
+    else{
+      state.category=parsed;
+      syncCategoryChips();
+      render();
+    }
   });
 
   document.getElementById('winChips').addEventListener('click', e=>{
