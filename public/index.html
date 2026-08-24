@@ -2397,6 +2397,39 @@
         scheduleRenderWhileDexLoading();
       }
 
+      // 批量请求偶尔会整批失败。只补拉仍无行情的币，并逐轮缩小批次，
+      // 最后一轮退化成单币请求，避免一个失败批次拖空整个分类。
+      const retryBatchSizes=[10,5,1];
+      for(let round=0;round<retryBatchSizes.length;round++){
+        const missing=out.filter(r=>!r.dex);
+        if(!missing.length) break;
+        await wait(1000*(round+1));
+
+        const retryBatchSize=retryBatchSizes[round];
+        for(let start=0;start<missing.length;start+=retryBatchSize){
+          const batch=missing.slice(start,start+retryBatchSize);
+          let dexByAddress=new Map();
+          try{
+            dexByAddress=await fetchDexBatch(batch.map(r=>r.address));
+          }catch(e){
+            console.warn(`Dexscreener retry round ${round+1} failed`,e);
+          }
+
+          batch.forEach(r=>{
+            const address=String(r.address||'').trim().toLowerCase();
+            const dex=dexByAddress.get(address);
+            if(!dex) return;
+            out.forEach((row,index)=>{
+              if(String(row.address||'').trim().toLowerCase()===address){
+                out[index]={...row,dex};
+              }
+            });
+          });
+          state.rows=out;
+          scheduleRenderWhileDexLoading();
+        }
+      }
+
       flushDexLoadRender();
       state.rows=out;
       render();
