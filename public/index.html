@@ -2076,19 +2076,31 @@
     return [...asBaseToken].sort(sortPairsByLiquidity)[0];
   };
 
-  async function fetchDex(address){
-    const res=await fetch(`https://api.dexscreener.com/latest/dex/tokens/${address}`);
-    if(!res.ok) return null;
-    const data=await res.json();
-    const p=chooseBestPair(data?.pairs, address);
-    if(!p) return null;
-    const url=p.url||'';
-    const network=(url.split('/')[3]||'').toLowerCase();
+  const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
-    if(network !== 'base') return null;
+  async function fetchDex(address){
+    const cleanAddress=String(address||'').trim().toLowerCase();
+    if(!cleanAddress) return null;
+
+    let res=null;
+    for(let attempt=0;attempt<3;attempt++){
+      try{
+        res=await fetch(`https://api.dexscreener.com/latest/dex/tokens/${cleanAddress}`);
+        if(res.ok) break;
+        if(res.status!==429 && res.status<500) return null;
+      }catch{
+        res=null;
+      }
+      if(attempt<2) await wait(500*(attempt+1));
+    }
+    if(!res?.ok) return null;
+
+    const data=await res.json();
+    const p=chooseBestPair(data?.pairs, cleanAddress);
+    if(!p) return null;
 
     return {
-      url,
+      url:p.url||'',
       image:p.info?.imageUrl||'',
       price: Number(p.priceUsd)||null,
       chg1h: p.priceChange?.h1 ?? null,
@@ -2357,7 +2369,7 @@
       updateSortIndicators();
 
       const duneRows=await fetchDune();
-      const concurrency=8, out=[]; let i=0;
+      const concurrency=4, out=[]; let i=0;
 
       async function worker(){
         while(i<duneRows.length){
