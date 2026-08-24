@@ -2078,41 +2078,50 @@
 
   const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
-  async function fetchDex(address){
-    const cleanAddress=String(address||'').trim().toLowerCase();
-    if(!cleanAddress) return null;
+  async function fetchDexBatch(addresses){
+    const cleanAddresses=[...new Set(addresses
+      .map(address=>String(address||'').trim().toLowerCase())
+      .filter(Boolean))];
+    const result=new Map();
+    if(!cleanAddresses.length) return result;
 
+    const endpoint=`https://api.dexscreener.com/tokens/v1/base/${cleanAddresses.join(',')}`;
     let res=null;
     for(let attempt=0;attempt<3;attempt++){
       try{
-        res=await fetch(`https://api.dexscreener.com/latest/dex/tokens/${cleanAddress}`);
+        res=await fetch(endpoint);
         if(res.ok) break;
-        if(res.status!==429 && res.status<500) return null;
+        if(res.status!==429 && res.status<500) return result;
       }catch{
         res=null;
       }
       if(attempt<2) await wait(500*(attempt+1));
     }
-    if(!res?.ok) return null;
+    if(!res?.ok) return result;
 
     const data=await res.json();
-    const p=chooseBestPair(data?.pairs, cleanAddress);
-    if(!p) return null;
+    const pairs=Array.isArray(data)?data:[];
 
-    return {
-      url:p.url||'',
-      image:p.info?.imageUrl||'',
-      price: Number(p.priceUsd)||null,
-      chg1h: p.priceChange?.h1 ?? null,
-      chg6h: p.priceChange?.h6 ?? null,
-      chg24h: p.priceChange?.h24 ?? null,
-      vol1h: p.volume?.h1 ?? null,
-      vol6h: p.volume?.h6 ?? null,
-      vol24h: p.volume?.h24 ?? null,
-      fdv: p.fdv ?? null,
-      createdAt: p.pairCreatedAt ?? null,
-      baseSymbol: p.baseToken?.symbol || ''
-    };
+    cleanAddresses.forEach(address=>{
+      const p=chooseBestPair(pairs,address);
+      if(!p) return;
+      result.set(address,{
+        url:p.url||'',
+        image:p.info?.imageUrl||'',
+        price: Number(p.priceUsd)||null,
+        chg1h: p.priceChange?.h1 ?? null,
+        chg6h: p.priceChange?.h6 ?? null,
+        chg24h: p.priceChange?.h24 ?? null,
+        vol1h: p.volume?.h1 ?? null,
+        vol6h: p.volume?.h6 ?? null,
+        vol24h: p.volume?.h24 ?? null,
+        fdv: p.fdv ?? null,
+        createdAt: p.pairCreatedAt ?? null,
+        baseSymbol: p.baseToken?.symbol || ''
+      });
+    });
+
+    return result;
   }
 
   async function fetchDune(){
@@ -2369,25 +2378,27 @@
       updateSortIndicators();
 
       const duneRows=await fetchDune();
-      const concurrency=4, out=[]; let i=0;
+      const batchSize=30;
+      const out=duneRows.map(r=>({...r,dex:null}));
 
-      async function worker(){
-        while(i<duneRows.length){
-          const idx=i++;
-          const r=duneRows[idx];
-          try{
-            out[idx] = {...r, dex: await fetchDex(r.address)};
-          }catch{
-            out[idx] = {...r, dex:null};
-          }
-          state.rows = out.filter(Boolean);
-          scheduleRenderWhileDexLoading();
+      for(let start=0;start<duneRows.length;start+=batchSize){
+        const batch=duneRows.slice(start,start+batchSize);
+        let dexByAddress=new Map();
+        try{
+          dexByAddress=await fetchDexBatch(batch.map(r=>r.address));
+        }catch(e){
+          console.warn('Dexscreener batch failed',e);
         }
+        batch.forEach((r,offset)=>{
+          const address=String(r.address||'').trim().toLowerCase();
+          out[start+offset]={...r,dex:dexByAddress.get(address)||null};
+        });
+        state.rows=out;
+        scheduleRenderWhileDexLoading();
       }
 
-      await Promise.all(Array.from({length:concurrency}, worker));
       flushDexLoadRender();
-      state.rows = out.filter(Boolean);
+      state.rows=out;
       render();
       updateLayout();
     }catch(e){
